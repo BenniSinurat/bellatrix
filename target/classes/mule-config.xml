@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:udp="http://www.mulesoft.org/schema/mule/udp"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:management="http://www.mulesoft.org/schema/mule/management"
+	xmlns:jetty="http://www.mulesoft.org/schema/mule/jetty" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/jetty http://www.mulesoft.org/schema/mule/jetty/current/mule-jetty.xsd
+http://www.mulesoft.org/schema/mule/management http://www.mulesoft.org/schema/mule/management/current/mule-management.xsd
+http://www.mulesoft.org/schema/mule/udp http://www.mulesoft.org/schema/mule/udp/current/mule-udp.xsd">
+
+	<context:property-placeholder location="${mule.env}.properties" />
+
+	<spring:beans>
+		<spring:import resource="classpath:app-context.xml" />
+		<spring:import resource="classpath:hazelcast-context.xml" />
+		<spring:import resource="classpath:mongodb-context.xml" />
+		<spring:import resource="classpath:cxf.xml" />
+	</spring:beans>
+
+	<custom-agent name="jolokia-agent" class="org.jolokia.mule.JolokiaMuleAgent">
+		<spring:property name="port" value="1095" />
+	</custom-agent>
+
+	<configuration>
+		<default-threading-profile maxThreadsActive="50" />
+	</configuration>
+
+
+	<jms:activemq-connector name="Active_MQ"
+		specification="1.1" brokerURL="${jms.broker.url}"
+		disableTemporaryReplyToDestinations="true" validateConnections="true"
+		doc:name="Active MQ" />
+
+	<http:listener-config name="HTTP_Listener_Configuration"
+		host="0.0.0.0" port="8081" basePath="bellatrix/host/services"
+		doc:name="HTTP Listener Configuration" />
+
+	<vm:connector name="Notification_VM" validateConnections="true"
+		doc:name="VM" />
+	<vm:endpoint exchange-pattern="request-response" path="notification"
+		connector-ref="Notification_VM" name="NotificationVM" doc:name="VM" />
+	<vm:endpoint exchange-pattern="request-response" path="kyc.notification.process"
+		connector-ref="Notification_VM" name="KYCNotificationVM" doc:name="VM" />
+	<vm:endpoint exchange-pattern="request-response"
+		path="kyc.notification.reject.process" connector-ref="Notification_VM"
+		name="KYCNotificationRejectVM" doc:name="VM" />
+
+	<vm:connector name="InterBank_Transfer_VM"
+		validateConnections="true" doc:name="VM" />
+	<vm:endpoint exchange-pattern="one-way" path="interbank.transfer.payment"
+		connector-ref="InterBank_Transfer_VM" name="InterbankVM" doc:name="VM" />
+
+	<vm:connector name="Access_Log_VM" validateConnections="true"
+		doc:name="VM" />
+
+	<vm:connector name="VA_Notification_VM"
+		validateConnections="true" doc:name="VM" />
+	<vm:endpoint exchange-pattern="one-way" path="va.notification"
+		connector-ref="VA_Notification_VM" name="VANotificationVM" doc:name="VM" />
+
+	<http:request-config name="Transfer_HTTP_Response_Configuration"
+		host="localhost" port="8081" doc:name="Transfer HTTP Response Configuration" />
+
+	<udp:connector name="GrayLogUDP" validateConnections="true"
+		keepSendSocketOpen="true" doc:name="UDP" />
+
+</mule>

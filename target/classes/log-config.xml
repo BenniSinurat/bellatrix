@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:udp="http://www.mulesoft.org/schema/mule/udp" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/udp http://www.mulesoft.org/schema/mule/udp/current/mule-udp.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+
+	<spring:beans>
+		<spring:bean id="LogProcessor" class="org.bellatrix.process.LogProcessor" />
+	</spring:beans>
+
+	<flow name="requestLogConfigFlow">
+		<vm:inbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="request.access.log" doc:name="VM" />
+		<set-variable
+			value="#[org.apache.commons.lang.StringUtils.replace(message.inboundProperties.'trxType','&quot;','')]"
+			variableName="type" doc:name="Variable" />
+		<set-variable value="#[message.id]" variableName="messageID"
+			doc:name="Variable" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger level="INFO" category="access.log"
+			message="[REQUEST  : {#[messageID]} = #[flowVars['type']]/#[payload]]"
+			doc:name="Logger" />
+		<expression-component doc:name="Expression">
+			<![CDATA[
+			gelfMap = new java.util.HashMap();
+			gelfMap['version']= '1.1';
+			gelfMap['host']= server.host;
+			gelfMap['short_message']= '[REQUEST : ' + flowVars['type'] + ']';
+			gelfMap['full_message']= payload;
+			gelfMap['_message_id']= message.id;
+			gelfMap['level']= '1';
+			payload = gelfMap;]]>
+		</expression-component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<udp:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="GrayLogUDP" host="${log.host.ip}" port="${log.host.port}"
+			doc:name="UDP" />
+	</flow>
+
+	<flow name="respondLogConfigFlow">
+		<vm:inbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="response.access.log" doc:name="VM" />
+		<set-variable
+			value="#[org.apache.commons.lang.StringUtils.replace(message.inboundProperties.'trxType','&quot;','')]"
+			variableName="type" doc:name="Variable" />
+		<set-variable value="#[message.id]" variableName="messageID"
+			doc:name="Variable" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger level="INFO" category="access.log"
+			message="[RESPONSE : {#[messageID]} = #[flowVars['type']]/#[payload]]"
+			doc:name="Logger" />
+		<expression-component doc:name="Expression">
+			<![CDATA[
+			gelfMap = new java.util.HashMap();
+			gelfMap['version']= '1.1';
+			gelfMap['host']= server.host;
+			gelfMap['short_message']= '[RESPONSE : ' + flowVars['type'] + ']';
+			gelfMap['full_message']= payload;
+			gelfMap['_message_id']= message.id;
+			gelfMap['level']= '1';
+			payload = gelfMap;]]>
+		</expression-component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<udp:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="GrayLogUDP" host="${log.host.ip}" port="${log.host.port}"
+			doc:name="UDP" />
+	</flow>
+
+	<flow name="exceptionLogConfigFlow">
+		<vm:inbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="exception.access.log" doc:name="VM" />
+		<set-variable
+			value="#[org.apache.commons.lang.StringUtils.replace(message.inboundProperties.'trxType','&quot;','')]"
+			variableName="type" doc:name="Variable" />
+		<set-variable value="#[message.id]" variableName="messageID"
+			doc:name="Variable" />
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<logger level="INFO" category="access.log"
+			message="[EXCEPTION : {#[messageID]} = #[flowVars['type']]/#[payload]]"
+			doc:name="Logger" />
+		<expression-component doc:name="Expression">
+			<![CDATA[
+			gelfMap = new java.util.HashMap();
+			gelfMap['version']= '1.1';
+			gelfMap['host']= server.host;
+			gelfMap['short_message']= '[EXCEPTION : ' + flowVars['type'] + ']';
+			gelfMap['full_message']= payload;
+			gelfMap['_message_id']= message.id;
+			gelfMap['level']= '3';
+			payload = gelfMap;]]>
+		</expression-component>
+		<json:object-to-json-transformer
+			doc:name="Object to JSON" />
+		<udp:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="GrayLogUDP" host="${log.host.ip}" port="${log.host.port}"
+			doc:name="UDP" />
+	</flow>
+
+</mule>

@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:util="http://www.springframework.org/schema/util" xmlns:hz="http://www.hazelcast.com/schema/spring"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd
+http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc-3.0.xsd
+http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
+http://www.hazelcast.com/schema/spring classpath:hazelcast.xsd">
+
+	<hz:hazelcast id="instance">
+		<hz:config>
+			<hz:group name="bellatrix" password="b1zd3v" />
+			<hz:network port="5701" port-auto-increment="true">
+				<hz:join>
+					<hz:multicast enabled="true" multicast-group="224.2.2.3"
+						multicast-port="54327" />
+				</hz:join>
+			</hz:network>
+			<hz:map name="WebServiceMap" read-backup-data="true">
+				<hz:map-store enabled="true" initial-mode="EAGER"
+					write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="webserviceCacheImpl" />
+			</hz:map>
+			<hz:map name="RequestPaymentMap" read-backup-data="true"
+				time-to-live-seconds="${request.payment.confirmation.cache.expired.second}">
+				<hz:entry-listeners>
+					<hz:entry-listener include-value="true"
+						implementation="requestPaymentNotification" />
+				</hz:entry-listeners>
+			</hz:map>
+			<hz:map name="PosInvoiceMap" read-backup-data="true"
+				time-to-live-seconds="${request.payment.confirmation.cache.expired.second}">
+				<hz:entry-listeners>
+					<hz:entry-listener include-value="true"
+						implementation="requestPaymentNotification" />
+				</hz:entry-listeners>
+			</hz:map>
+			<hz:map name="GeneratePaymentMap" read-backup-data="true"
+				time-to-live-seconds="${generate.payment.ticket.cache.expired.second}">
+				<hz:map-store enabled="${generate.payment.ticket.persistent.mode}"
+					initial-mode="EAGER" write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="generateTicketCacheImpl" />
+			</hz:map>
+			<hz:map name="GenerateTopupMap" read-backup-data="true"
+				time-to-live-seconds="${generate.topup.otp.cache.expired.second}">
+				<hz:map-store enabled="${generate.topup.otp.persistent.mode}"
+					initial-mode="EAGER" write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="generateTopupCacheImpl" />
+			</hz:map>
+			<hz:map name="GenerateCashoutMap" read-backup-data="true"
+				time-to-live-seconds="${generate.cashout.otp.cache.expired.second}">
+				<hz:map-store enabled="${generate.cashout.otp.persistent.mode}"
+					initial-mode="EAGER" write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="generateCashoutCacheImpl" />
+			</hz:map>
+			<hz:map name="GroupPermissionMap" read-backup-data="true">
+				<hz:map-store enabled="true" initial-mode="EAGER"
+					write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="groupPermissionCacheImpl" />
+			</hz:map>
+			<hz:map name="FeeMap" read-backup-data="true">
+				<hz:map-store enabled="true" initial-mode="EAGER"
+					write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="feeCacheImpl" />
+			</hz:map>
+			<hz:map name="AccountMap" read-backup-data="true">
+				<hz:map-store enabled="true" initial-mode="EAGER"
+					write-delay-seconds="${cache.global.write.delay.second}"
+					implementation="accountCacheImpl" />
+			</hz:map>
+			<hz:map name="TrxTypeMap">
+			</hz:map>
+			<hz:map name="BalanceMap" time-to-live-seconds="180">
+			</hz:map>
+			<hz:map name="AccountLock" time-to-live-seconds="90" />
+			<hz:map name="RegisterVAMap" read-backup-data="true">
+				<hz:entry-listeners>
+					<hz:entry-listener include-value="true"
+						implementation="RegisterVAListener" />
+				</hz:entry-listeners>
+			</hz:map>
+		</hz:config>
+	</hz:hazelcast>
+
+	<bean id="generateTopupCacheImpl" class="org.bellatrix.process.GenerateTopupCacheImpl">
+		<property name="expiredAtMinute"
+			value="${generate.topup.otp.persistent.expired.minute}" />
+	</bean>
+	<bean id="generateCashoutCacheImpl" class="org.bellatrix.process.GenerateCashoutCacheImpl">
+		<property name="expiredAtMinute"
+			value="${generate.cashout.otp.persistent.expired.minute}" />
+	</bean>
+	<bean id="generateTicketCacheImpl" class="org.bellatrix.process.GenerateTicketCacheImpl">
+		<property name="expiredAtMinute"
+			value="${generate.payment.ticket.persistent.expired.minute}" />
+	</bean>
+	<bean id="requestPaymentNotification"
+		class="org.bellatrix.process.RequestPaymentNotificationListener" />
+
+	<bean id="webserviceCacheImpl" class="org.bellatrix.process.WebserviceCacheImpl" />
+	<bean id="groupPermissionCacheImpl" class="org.bellatrix.process.GroupPermissionCacheImpl" />
+	<bean id="feeCacheImpl" class="org.bellatrix.process.FeeCacheImpl" />
+	<bean id="accountCacheImpl" class="org.bellatrix.process.AccountCacheImpl" />
+	<bean id="trxTypeCacheImpl" class="org.bellatrix.process.TransferTypeCacheImpl" />
+	<bean id="registerVAListener" class="org.bellatrix.process.RegisterVAListener" />
+
+</beans>

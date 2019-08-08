@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:mule-ss="http://www.mulesoft.org/schema/mule/spring-security"
+	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ss="http://www.springframework.org/schema/security"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/spring-security http://www.mulesoft.org/schema/mule/spring-security/current/mule-spring-security.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.0.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+	<spring:beans>
+		<spring:bean id="InterBankMessageServiceImpl"
+			class="org.bellatrix.process.InterBankServiceImpl" />
+	</spring:beans>
+
+	<flow name="topupFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration"
+			path="ws/interbanks" doc:name="HTTP" />
+		<cxf:jaxws-service serviceClass="org.bellatrix.services.InterBank"
+			doc:name="CXF" />
+		<vm:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="request.access.log" doc:name="VM">
+			<set-property propertyName="trxType"
+				value="#[message.inboundProperties.'soapaction']" />
+		</vm:outbound-endpoint>
+		<pooled-component>
+			<spring-object bean="InterBankMessageServiceImpl" />
+		</pooled-component>
+		<vm:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="response.access.log" doc:name="VM">
+			<set-property propertyName="trxType"
+				value="#[message.inboundProperties.'soapaction']" />
+		</vm:outbound-endpoint>
+	</flow>
+
+	<flow name="interbank-accountTransferPayment-configFlow">
+		<vm:inbound-endpoint exchange-pattern="one-way"
+			connector-ref="InterBank_Transfer_VM" responseTimeout="80000"
+			path="interbank.transfer.payment" doc:name="VM" />
+		<set-variable variableName="gwURL"
+			value="#[message.inboundProperties.'GATEWAY_URL']" doc:name="Variable" />
+		<set-variable variableName="trxType"
+			value="#[message.inboundProperties.'TRANSACTION_TYPE']" doc:name="Variable" />
+		<message-properties-transformer
+			doc:name="Message Properties">
+			<add-message-property key="TRANSACTION_TYPE"
+				value="#[trxType]" />
+		</message-properties-transformer>
+		<jms:outbound-endpoint connector-ref="Active_MQ"
+			queue="#[flowVars['gwURL']]" exchange-pattern="one-way" />
+	</flow>
+
+	<flow name="interbank-accountTransfer-paymentResponse-configFlow">
+		<jms:inbound-endpoint connector-ref="Active_MQ"
+			queue="interbank.account.transfer.response" exchange-pattern="one-way" />
+		<expression-component doc:name="Expression">
+		<![CDATA[
+			msg='<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ser="http://services.bellatrix.org/">
+				   <soapenv:Header>
+				      <ser:headerAuth>
+				         <token>' + payload['token'] + '</token>
+				      </ser:headerAuth>
+				   </soapenv:Header>
+				   <soapenv:Body>
+				      <ser:bankAccountTransferPaymentConfirmation>
+				         <amount>' + payload['amount'] + '</amount>
+				         <referenceNumber>' + payload['referenceNumber'] + '</referenceNumber>
+				         <status>' + payload['status'] + '</status>
+				         <traceNumber>' + payload['traceNumber'] + '</traceNumber>
+				         <transactionNumber>' + payload['transactionNumber'] + '</transactionNumber>
+				         <transferID>' + payload['transferID'] + '</transferID>
+				         <bankName>' + payload['bankName'] + '</bankName>		         
+				         <accountNo>' + payload['toAccountNumber'] + '</accountNo>		         
+				      </ser:bankAccountTransferPaymentConfirmation>
+				   </soapenv:Body>
+				</soapenv:Envelope>';
+			payload = msg;]]>
+		</expression-component>
+		<http:request config-ref="Transfer_HTTP_Response_Configuration"
+			path="bellatrix/host/services/ws/interbanks" responseTimeout="80000"
+			method="POST" doc:name="HTTP">
+			<http:request-builder>
+				<http:header headerName="soapaction"
+					value="&quot;bankAccountTransferPaymentConfirmation&quot;" />
+			</http:request-builder>
+		</http:request>
+	</flow>
+
+</mule>

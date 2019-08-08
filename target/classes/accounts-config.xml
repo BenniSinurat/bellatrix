@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+
+	<spring:bean id="AccountMessageServiceImpl" class="org.bellatrix.process.AccountServiceImpl" />
+
+	<flow name="accountsFlow">
+		<http:listener config-ref="HTTP_Listener_Configuration"
+			path="ws/accounts" doc:name="HTTP" />
+		<cxf:jaxws-service serviceClass="org.bellatrix.services.Account"
+			doc:name="CXF" />
+		<vm:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="request.access.log" doc:name="VM">
+			<set-property propertyName="trxType"
+				value="#[message.inboundProperties.'soapaction']" />
+		</vm:outbound-endpoint>
+		<pooled-component>
+			<spring-object bean="AccountMessageServiceImpl" />
+		</pooled-component>
+		<vm:outbound-endpoint exchange-pattern="one-way"
+			connector-ref="Access_Log_VM" path="response.access.log" doc:name="VM">
+			<set-property propertyName="trxType"
+				value="#[message.inboundProperties.'soapaction']" />
+		</vm:outbound-endpoint>
+	</flow>
+
+</mule>
