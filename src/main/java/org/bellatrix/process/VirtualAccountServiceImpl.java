@@ -235,10 +235,10 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			preq.setToMember(va.getRegVA().getMember().getUsername());
 			preq.setTraceNumber(req.getTraceNumber());
 			preq.setOriginator(va.getRegVA().getMember().getUsername());
-			
+
 			if (req.getTransactionDate() != null) {
 				Date trxDate = req.getTransactionDate();
-				logger.info("TRX DATE INQ: "+trxDate);
+				logger.info("TRX DATE INQ: " + trxDate);
 				preq.setTransactionDate(trxDate);
 			} else {
 				Date trxDate = new Date();
@@ -671,11 +671,9 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 					Date expiredDate = rva.getExpiredAt() != null
 							? Date.from(rva.getExpiredAt().atZone(ZoneId.systemDefault()).toInstant())
 							: null;
-					status = baseRepository.getVirtualAccountRepository().getVAPaymentStatus(
-							Integer.valueOf(listVA.get(i).getId()), req.getFromDate(), req.getToDate());
+					status = baseRepository.getVirtualAccountRepository()
+							.getVAPaymentStatus(Integer.valueOf(listVA.get(i).getId()));
 					for (int l = 0; l < status.size(); l++) {
-						logger.info("ID: " + listVA.get(i).getId() + " /Payment Code: " + listVA.get(i).getPaymentCode()
-								+ " /Status: " + status.get(l).getStatus());
 						vaView.setExpiredAt(expiredDate);
 						vaView.setBankID(listVA.get(i).getBankID());
 						vaView.setBankCode(listVA.get(i).getBankCode());
@@ -690,24 +688,16 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 						vaView.setTransactionDate(listVA.get(i).getTransactionDate());
 						vaView.setFullPayment(listVA.get(i).isFullPayment());
 						vaView.setPersistent(listVA.get(i).isPersistent());
-						if (status.get(l).getStatus() == null) {
-							vaView.setStatus("UNPAID");
-						} else if (status.get(l).getStatus().equalsIgnoreCase("PROCESSED")) {
-							vaView.setStatus("PAID");
-							vaView.setTransactionDate(status.get(l).getTransactionDate());
-						} else if (status.get(l).getStatus().equalsIgnoreCase("REVERSED")) {
-							vaView.setStatus("REVERSED");
-						} else if (status.get(l).getStatus().equalsIgnoreCase("PENDING")) {
-							vaView.setStatus("PENDING");
-						}
+						vaView.setStatus(status.get(l).getStatus());
+						vaView.setTransactionDate(status.get(l).getTransactionDate());
 						listVaView.add(vaView);
 					}
+					logger.info("I "+i+" /ID: " + listVA.get(i).getId() + " /Payment Code: " + listVaView.get(i).getPaymentCode()
+							+ " /Status: " + listVaView.get(i).getStatus());
 				} else {
-					status = baseRepository.getVirtualAccountRepository().getVAPaymentStatus(
-							Integer.valueOf(listVA.get(i).getId()), req.getFromDate(), req.getToDate());
+					status = baseRepository.getVirtualAccountRepository()
+							.getVAPaymentStatus(Integer.valueOf(listVA.get(i).getId()));
 					for (int l = 0; l < status.size(); l++) {
-						logger.info("ID: " + listVA.get(i).getId() + " /Payment Code: " + listVA.get(i).getPaymentCode()
-								+ " /Status: " + status.get(l).getStatus());
 						vaView.setExpiredAt(listVA.get(i).getExpiredAt());
 						vaView.setBankID(listVA.get(i).getBankID());
 						vaView.setBankCode(listVA.get(i).getBankCode());
@@ -722,24 +712,16 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 						vaView.setTransactionDate(listVA.get(i).getTransactionDate());
 						vaView.setFullPayment(listVA.get(i).isFullPayment());
 						vaView.setPersistent(listVA.get(i).isPersistent());
-						if (status.get(l).getStatus() == null) {
-							vaView.setStatus("EXPIRED");
-						} else if (status.get(l).getStatus().equalsIgnoreCase("PROCESSED")) {
-							vaView.setStatus("PAID");
-						} else if (status.get(l).getStatus().equalsIgnoreCase("REVERSED")) {
-							vaView.setStatus("REVERSED");
-						} else if (status.get(l).getStatus().equalsIgnoreCase("PENDING")) {
-							vaView.setStatus("PENDING");
-						}
+						vaView.setStatus(status.get(l).getStatus());
+						vaView.setTransactionDate(status.get(l).getTransactionDate());
 						listVaView.add(vaView);
+						logger.info("II "+l+" /ID: " + listVA.get(i).getId() + " /Payment Code: " + listVA.get(i).getPaymentCode()
+								+ " /Status: " + status.get(l).getStatus());
 					}
 				}
 			}
 
-			// Integer totalRecord =
-			// baseRepository.getVirtualAccountRepository().countVAReport(members.getId());
-
-			loadVAByMemberResponse.setTotalRecords(listVA.size());
+			loadVAByMemberResponse.setTotalRecords(listVaView.size());
 			loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			loadVAByMemberResponse.setVaRecord(listVaView);
 

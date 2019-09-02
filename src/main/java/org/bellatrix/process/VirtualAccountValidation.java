@@ -297,6 +297,7 @@ public class VirtualAccountValidation {
 
 		String fromDate = req.getFromDate() != null ? req.getFromDate() : Utils.GetDate("yyyy-MM-dd");
 		String toDate = req.getFromDate() != null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
+		logger.info("From Date: " + fromDate + " /To Date: " + toDate);
 		List<VARecordView> listVA = new LinkedList<VARecordView>();
 		listVA = baseRepository.getVirtualAccountRepository().loadVAByStatus(req.getUsername(), memberID, fromDate,
 				toDate, req.getCurrentPage(), req.getPageSize());

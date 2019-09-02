@@ -405,7 +405,8 @@
                                             <td style="padding: 0 0 10px 0;">
                                                 <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                                     <tr>
-                                                        <td align="right" style="font-family: Arial, sans-serif; color: #333333; font-size: 16px;">Rp.#[payload.fees.totalFees]</td>
+                                                        <!--td align="right" style="font-family: Arial, sans-serif; color: #333333; font-size: 16px;">Rp.#[payload.fees.totalFees]</td-->
+                                                        <td align="right" style="font-family: Arial, sans-serif; color: #333333; font-size: 16px;">Rp.0</td>
                                                     </tr>
                                                 </table>
                                             </td>
@@ -451,7 +452,8 @@
                                             <td>
                                                 <table cellpadding="0" cellspacing="0" border="0" width="100%">
                                                     <tr>
-                                                        <td align="right" style="font-family: Arial, sans-serif; color: #7ca230; font-size: 16px; font-weight: bold;">Rp.#[payload.fees.finalAmount]</td>
+                                                        <!--td align="right" style="font-family: Arial, sans-serif; color: #7ca230; font-size: 16px; font-weight: bold;">Rp.#[payload.fees.finalAmount]</td-->
+                                                        <td align="right" style="font-family: Arial, sans-serif; color: #7ca230; font-size: 16px; font-weight: bold;">Rp.#[payload.fees.transactionAmount]</td>
                                                     </tr>
                                                 </table>
                                             </td>

@@ -193,11 +193,11 @@ public class VirtualAccountRepository {
 		}
 	}
 
-	public List<VARecordView> getVAPaymentStatus(Integer id, String fromDate, String toDate) {
+	public List<VARecordView> getVAPaymentStatus(Integer id) {
 		try {
 			List<VARecordView> va = this.jdbcTemplate.query(
-					"select transaction_state, transaction_date from transfers where billing_id =? and month(transaction_date) between month(?) and month(?) and year(transaction_date) between year(?) and year(?) and date(transaction_date) between date(?) and date(?)",
-					new Object[] { id, fromDate, toDate, fromDate, toDate, fromDate, toDate },
+					"select transaction_state, transaction_date from transfers where billing_id =?",
+					new Object[] { id },
 					new RowMapper<VARecordView>() {
 						public VARecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
 							VARecordView vav = new VARecordView();
