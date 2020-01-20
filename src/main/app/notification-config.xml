@@ -51,6 +51,19 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 			value="#[message.inboundProperties.'NOTIFICATION_URL']" doc:name="Variable" />
 		<choice doc:name="Choice">
 			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'resetCredentialOTP']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Berikut pin baru Anda : ' + payload.pin + '. Silahkan langsung mengganti pin Anda.';
+					responseMap['to']= payload.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
 				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'requestPaymentConfirmation']">
 				<expression-component doc:name="Expression">
 					<![CDATA[
@@ -178,11 +191,24 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
 			</when>
 			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'smsTrxNotification']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Transaksi ' +  payload.fromMember.username + ' Rp.' + payload.fees.finalAmount + ' BERHASIL, RefNo : ' + payload.transactionNumber;
+					responseMap['to']= payload.toMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
 				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'billingPayment']">
 				<set-variable value="#[payload['email']]" variableName="to"
 					doc:name="Variable" />
-				<parse-template location="PaymentCodeInvoice.tmp" mimeType="text/html"
-					doc:name="Parse Template" />
+				<parse-template location="PaymentCodeInvoice.tmp"
+					mimeType="text/html" doc:name="Parse Template" />
 				<expression-component doc:name="Expression">
 					<![CDATA[
 					regMap = new java.util.HashMap();
@@ -207,6 +233,31 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 				</expression-component>
 				<jms:outbound-endpoint connector-ref="Active_MQ"
 					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'merchantRegister']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<choice>
+					<when expression="#[payload['status'] == 'approved']">
+						<parse-template location="MerchantRegister.tmp"
+							mimeType="text/html" doc:name="Parse Template" />
+					</when>
+					<otherwise>
+						<parse-template location="MerchantRegisterReject.tmp"
+							mimeType="text/html" doc:name="Parse Template" />
+					</otherwise>
+				</choice>
+				<expression-component doc:name="Expression">
+					<![CDATA[regMap = new java.util.HashMap();
+						regMap['from']= 'noreply@optima.co.id';
+						regMap['to']= flowVars['to'];
+						regMap['subject']= 'Merchant Register';
+						regMap['body']= payload ;
+					payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="notification.email" doc:name="JMS" />
 			</when>
 			<otherwise>
 				<logger level="INFO"

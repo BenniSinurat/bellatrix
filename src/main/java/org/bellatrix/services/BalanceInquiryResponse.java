@@ -2,8 +2,8 @@ package org.bellatrix.services;
 
 import java.math.BigDecimal;
 
-import org.bellatrix.data.AccountView;
-import org.bellatrix.data.MemberView;
+import org.bellatrix.data.Accounts;
+import org.bellatrix.data.Members;
 import org.bellatrix.data.ResponseStatus;
 
 public class BalanceInquiryResponse {
@@ -13,8 +13,8 @@ public class BalanceInquiryResponse {
 	private BigDecimal reservedAmount;
 	private String formattedReservedAmount;
 	private ResponseStatus status;
-	private MemberView member;
-	private AccountView account;
+	private Members member;
+	private Accounts account;
 
 	public String getFormattedBalance() {
 		return formattedBalance;
@@ -56,19 +56,19 @@ public class BalanceInquiryResponse {
 		this.formattedReservedAmount = formattedReservedAmount;
 	}
 
-	public MemberView getMember() {
+	public Members getMember() {
 		return member;
 	}
 
-	public void setMember(MemberView member) {
+	public void setMember(Members member) {
 		this.member = member;
 	}
 
-	public AccountView getAccount() {
+	public Accounts getAccount() {
 		return account;
 	}
 
-	public void setAccount(AccountView account) {
+	public void setAccount(Accounts account) {
 		this.account = account;
 	}
 

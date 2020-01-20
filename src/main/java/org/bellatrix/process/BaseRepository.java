@@ -50,12 +50,15 @@ public class BaseRepository {
 
 	@Autowired
 	private MessageRepository messageRepository;
-	
+
 	@Autowired
 	private PosRepository posRepository;
-	
+
 	@Autowired
 	private PersistenceRepository persistenceRepository;
+
+	@Autowired
+	private CurrencyRepository currenciesRepository;
 
 	public WebserviceRepository getWebServicesRepository() {
 		return webServicesRepository;
@@ -191,6 +194,14 @@ public class BaseRepository {
 
 	public void setPosRepository(PosRepository posRepository) {
 		this.posRepository = posRepository;
+	}
+
+	public CurrencyRepository getCurrenciesRepository() {
+		return currenciesRepository;
+	}
+
+	public void setCurrenciesRepository(CurrencyRepository currenciesRepository) {
+		this.currenciesRepository = currenciesRepository;
 	}
 
 }

@@ -8,8 +8,9 @@ import java.util.stream.Collectors;
 import javax.xml.ws.Holder;
 
 import org.apache.log4j.Logger;
-import org.bellatrix.data.AccountView;
+import org.bellatrix.data.AccountPermissions;
 import org.bellatrix.data.Accounts;
+import org.bellatrix.data.Currencies;
 import org.bellatrix.data.Header;
 import org.bellatrix.data.MemberView;
 import org.bellatrix.data.Members;
@@ -23,9 +24,12 @@ import org.bellatrix.data.Transfers;
 import org.bellatrix.data.WebServices;
 import org.bellatrix.services.Account;
 import org.bellatrix.services.AccountsPermissionRequest;
-import org.bellatrix.services.AccountsPermissionResponse;
 import org.bellatrix.services.BalanceInquiryRequest;
 import org.bellatrix.services.BalanceInquiryResponse;
+import org.bellatrix.services.CurrencyRequest;
+import org.bellatrix.services.CurrencyResponse;
+import org.bellatrix.services.LoadAccountPermissionsRequest;
+import org.bellatrix.services.LoadAccountPermissionsResponse;
 import org.bellatrix.services.AccountsRequest;
 import org.bellatrix.services.LoadAccountsByGroupsRequest;
 import org.bellatrix.services.LoadAccountsByGroupsResponse;
@@ -51,6 +55,8 @@ public class AccountServiceImpl implements Account {
 	private MemberValidation memberValidation;
 	@Autowired
 	private AccountValidation accountValidation;
+	@Autowired
+	private CurrencyValidation currenciesValidation;
 	private Logger logger = Logger.getLogger(AccessServiceImpl.class);
 
 	@Override
@@ -59,15 +65,24 @@ public class AccountServiceImpl implements Account {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			if (req.getGroupID() != null) {
-				Accounts accounts = baseRepository.getAccountRepository().loadAccountsByID(req.getId(),
-						req.getGroupID());
+				Accounts accounts = accountValidation.validateAccount(req.getId(), req.getGroupID());
 				if (accounts == null) {
 					accountResponse.setStatus(StatusBuilder.getStatus(Status.ACCOUNT_NOT_FOUND));
 					return accountResponse;
 				}
+				Currencies currency = baseRepository.getCurrenciesRepository()
+						.loadCurrencyByID(accounts.getCurrency().getId());
+				accounts.setFormattedCreditLimit(Utils.formatAmount(accounts.getCreditLimit(), currency.getGrouping(),
+						currency.getDecimal(), currency.getFormat(), currency.getPrefix(), currency.getTrailer()));
+				accounts.setFormattedLowerCreditLimit(Utils.formatAmount(accounts.getLowerCreditLimit(),
+						currency.getGrouping(), currency.getDecimal(), currency.getFormat(), currency.getPrefix(),
+						currency.getTrailer()));
+				accounts.setFormattedUpperCreditLimit(Utils.formatAmount(accounts.getUpperCreditLimit(),
+						currency.getGrouping(), currency.getDecimal(), currency.getFormat(), currency.getPrefix(),
+						currency.getTrailer()));
 				accountResponse.setAccount(accounts);
 			} else {
-				Accounts accounts = baseRepository.getAccountRepository().loadAccountsByID(req.getId());
+				Accounts accounts = accountValidation.validateAccount(req.getId(), req.getGroupID());
 				if (accounts == null) {
 					accountResponse.setStatus(StatusBuilder.getStatus(Status.ACCOUNT_NOT_FOUND));
 					return accountResponse;
@@ -88,7 +103,7 @@ public class AccountServiceImpl implements Account {
 		LoadAccountsByGroupsResponse accountResponse = new LoadAccountsByGroupsResponse();
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
-			List<Accounts> accounts = baseRepository.getAccountRepository().loadAccountsByGroups(req);
+			List<Accounts> accounts = accountValidation.validateAccountByGroup(req);
 			accountResponse.setAccounts(accounts);
 			accountResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return accountResponse;
@@ -113,11 +128,6 @@ public class AccountServiceImpl implements Account {
 			 */
 			Members fromMember = memberValidation.validateMember(req.getUsername(), true);
 
-			MemberView memberView = new MemberView();
-			memberView.setId(fromMember.getId());
-			memberView.setName(fromMember.getName());
-			memberView.setUsername(fromMember.getUsername());
-
 			/*
 			 * Validate FromMember Credential
 			 */
@@ -127,22 +137,21 @@ public class AccountServiceImpl implements Account {
 			 * Validate AccountID
 			 */
 			Accounts account = accountValidation.validateAccount(req.getAccountID(), fromMember.getGroupID());
-			AccountView accountView = new AccountView();
-			accountView.setId(account.getId());
-			accountView.setName(account.getName());
-
-			BigDecimal balance = baseRepository.getAccountRepository().loadBalanceInquiry(req.getUsername(),
-					req.getAccountID());
-
-			BigDecimal reservedAmount = baseRepository.getAccountRepository().loadReservedAmount(req.getUsername(),
-					req.getAccountID());
+			Currencies currency = baseRepository.getCurrenciesRepository()
+					.loadCurrencyByID(account.getCurrency().getId());
+			account.setCurrency(currency);
+			
+			BigDecimal balance = accountValidation.loadBalanceInquiry(req.getUsername(), req.getAccountID());
+			BigDecimal reservedAmount = accountValidation.loadReservedAmount(req.getUsername(), req.getAccountID());
 
 			balanceResponse.setBalance(balance);
-			balanceResponse.setFormattedBalance(Utils.formatAmount(balance));
+			balanceResponse.setFormattedBalance(Utils.formatAmount(balance, currency.getGrouping(),
+					currency.getDecimal(), currency.getFormat(), currency.getPrefix(), currency.getTrailer()));
 			balanceResponse.setReservedAmount(reservedAmount);
-			balanceResponse.setFormattedReservedAmount(Utils.formatAmount(reservedAmount));
-			balanceResponse.setAccount(accountView);
-			balanceResponse.setMember(memberView);
+			balanceResponse.setFormattedReservedAmount(Utils.formatAmount(reservedAmount, currency.getGrouping(),
+					currency.getDecimal(), currency.getFormat(), currency.getPrefix(), currency.getTrailer()));
+			balanceResponse.setAccount(account);
+			balanceResponse.setMember(fromMember);
 			balanceResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return balanceResponse;
 		} catch (TransactionException ce) {
@@ -182,6 +191,8 @@ public class AccountServiceImpl implements Account {
 				history.setStatus(StatusBuilder.getStatus(Status.NO_TRANSACTION));
 				return history;
 			}
+			
+			Currencies currency = baseRepository.getCurrenciesRepository().loadCurrencyByAccountID(req.getAccountID());
 
 			Integer totalDisplayRecords = baseRepository.getAccountRepository()
 					.countTotalTransaction(fromMember.getId(), req.getAccountID(), fromDate, toDate);
@@ -192,7 +203,7 @@ public class AccountServiceImpl implements Account {
 				transferIDs.add(t.getId());
 			}
 
-			List<PaymentFields> pfield = baseRepository.getCustomFieldRepository()
+			List<PaymentFields> pfield = baseRepository.getTransferRepository()
 					.loadMultiPaymentFieldValuesByTransferID(transferIDs);
 
 			Map<Integer, List<PaymentFields>> result = pfield.stream()
@@ -214,24 +225,33 @@ public class AccountServiceImpl implements Account {
 				toMemberTrf.setId(trf.get(i).getToMemberID());
 				toMemberTrf.setName(trf.get(i).getToName());
 				toMemberTrf.setUsername(trf.get(i).getToUsername());
+				
+				MemberView reverseByTrf = new MemberView();
+				reverseByTrf.setId(trf.get(i).getReverseByID());
+				reverseByTrf.setName(trf.get(i).getReverseByName());
+				reverseByTrf.setUsername(trf.get(i).getReverseByUsername());
 
-				if (trf.get(i).getParentID() == null) {
+				//if (trf.get(i).getParentID() == null) {
 					TransferTypeFields typeField = new TransferTypeFields();
 					typeField.setFromAccounts(trf.get(i).getFromAccountID());
 					typeField.setToAccounts(trf.get(i).getToAccountID());
 					typeField.setName(trf.get(i).getName());
 					trfHistory.setTransferType(typeField);
-				}
+				//}
 
 				trfHistory.setAmount(trf.get(i).getAmount());
+				trfHistory.setFormattedAmount(Utils.formatAmount(trf.get(i).getAmount(), currency.getGrouping(),
+						currency.getDecimal(), currency.getFormat(), currency.getPrefix(), currency.getTrailer()));
 				trfHistory.setChargedBack(trf.get(i).isChargedBack());
 				trfHistory.setDescription(trf.get(i).getDescription());
 				trfHistory.setFromMember(fromMemberTrf);
 				trfHistory.setToMember(toMemberTrf);
+				trfHistory.setReverseBy(reverseByTrf);
 				trfHistory.setId(trf.get(i).getId());
 				trfHistory.setParentID(trf.get(i).getParentID());
 				trfHistory.setTraceNumber(trf.get(i).getTraceNumber().substring(1));
 				trfHistory.setTransactionDate(trf.get(i).getTransactionDate());
+				trfHistory.setFormattedTransactionDate(trf.get(i).getFormattedTransactionDate());
 				trfHistory.setTransactionNumber(trf.get(i).getTransactionNumber());
 				trfHistory.setTransactionState(trf.get(i).getTransactionState());
 				lth.add(trfHistory);
@@ -260,7 +280,7 @@ public class AccountServiceImpl implements Account {
 			List<Accounts> accounts = baseRepository.getAccountRepository().loadAccounts(req.getCurrentPage(),
 					req.getPageSize());
 
-			Integer totalRecords = baseRepository.getAccountRepository().countTotalAccount();
+			Integer totalRecords = accountValidation.countTotalAccounts();
 			accountResponse.setAccount(accounts);
 			accountResponse.setTotalRecords(totalRecords);
 			accountResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
@@ -298,8 +318,12 @@ public class AccountServiceImpl implements Account {
 	public void createAccount(Holder<Header> headerParam, AccountsRequest req) throws TransactionException {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			Currencies currency = currenciesValidation.validateCurrencyByID(req.getCurrencyID());
+			if (currency == null) {
+				throw new TransactionException(String.valueOf(Status.INVALID_CURRENCY));
+			}
 			baseRepository.getAccountRepository().createAccount(req.getName(), req.getDescription(),
-					req.isSystemAccount());
+					req.isSystemAccount(), req.getCurrencyID());
 		} catch (TransactionException e) {
 			throw new TransactionException(e.getMessage());
 		}
@@ -310,7 +334,7 @@ public class AccountServiceImpl implements Account {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			accountValidation.validateAccount(req.getId());
-			baseRepository.getAccountRepository().updateAccount(req.getId(), req.getName(), req.getDescription(),
+			baseRepository.getAccountRepository().updateAccount(req.getId(), req.getCurrencyID(), req.getName(), req.getDescription(),
 					req.isSystemAccount());
 		} catch (TransactionException e) {
 			throw new TransactionException(e.getMessage());
@@ -335,8 +359,8 @@ public class AccountServiceImpl implements Account {
 			throws TransactionException {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
-			accountValidation.validateAccount(req.getAccountID());
-			baseRepository.getAccountRepository().updateAccountPermission(req);
+			baseRepository.getAccountRepository().updateAccountPermission(req.getId(), req.getCreditLimit(),
+					req.getUpperCreditLimit(), req.getLowerCreditLimit());
 		} catch (TransactionException e) {
 			throw new TransactionException(e.getMessage());
 		}
@@ -347,26 +371,92 @@ public class AccountServiceImpl implements Account {
 			throws TransactionException {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
-			accountValidation.validateAccount(req.getAccountID());
-			baseRepository.getAccountRepository().deleteAccountPermission(req.getId());
+			if (req.getId() != null) {
+				baseRepository.getAccountRepository().deleteAccountPermission(req.getId());
+			} else {
+				accountValidation.validateAccount(req.getAccountID());
+				baseRepository.getAccountRepository().deleteAccountPermission(req.getAccountID(), req.getGroupID());
+			}
 		} catch (TransactionException e) {
 			throw new TransactionException(e.getMessage());
 		}
 	}
 	
 	@Override
-	public AccountsPermissionResponse loadPermissionByAccountID(Holder<Header> headerParam, AccountsPermissionRequest req) {
-		AccountsPermissionResponse apr = new AccountsPermissionResponse();
+	public CurrencyResponse loadCurrency(Holder<Header> headerParam, CurrencyRequest req) throws TransactionException {
+		CurrencyResponse cr = new CurrencyResponse();
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
-			accountValidation.validateAccount(req.getAccountID());
-			List<Accounts> accountPermission = baseRepository.getAccountRepository().listGroupByAccountID(req.getAccountID());
-			apr.setAccountPermissions(accountPermission);
-			apr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-		}catch (Exception e) {
-			apr.setStatus(StatusBuilder.getStatus(e.getMessage()));
-			return apr;
+			if (req.getId() == null) {
+				List<Currencies> lc = baseRepository.getCurrenciesRepository().loadAllCurrencies();
+				cr.setCurrency(lc);
+				if (lc.size() == 0) {
+					cr.setStatus(StatusBuilder.getStatus(Status.INVALID_CURRENCY));
+				}
+			} else {
+				List<Currencies> listCurrencies = new LinkedList<Currencies>();
+				Currencies c = baseRepository.getCurrenciesRepository().loadCurrencyByID(req.getId());
+				listCurrencies.add(c);
+				cr.setCurrency(listCurrencies);
+			}
+			cr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			return cr;
+		} catch (TransactionException ex) {
+			cr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
+			return cr;
 		}
-		return apr;
 	}
+
+	@Override
+	public void createCurrency(Holder<Header> headerParam, CurrencyRequest req) throws TransactionException {
+		webserviceValidation.validateWebservice(headerParam.value.getToken());
+		currenciesValidation.createCurrency(req);
+	}
+
+	@Override
+	public void updateCurrency(Holder<Header> headerParam, CurrencyRequest req) throws TransactionException {
+		webserviceValidation.validateWebservice(headerParam.value.getToken());
+		currenciesValidation.updateCurrency(req);
+	}
+	
+	@Override
+	public LoadAccountPermissionsResponse loadAccountPermissionsByAccount(Holder<Header> headerParam,
+			LoadAccountPermissionsRequest req) {
+		LoadAccountPermissionsResponse loadAccountPermissionsResponse = new LoadAccountPermissionsResponse();
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			List<AccountPermissions> accounts = accountValidation.validateAccountPermission(req.getAccountID());
+			if (accounts == null) {
+				loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(Status.ACCOUNT_NOT_FOUND));
+				return loadAccountPermissionsResponse;
+			}
+			loadAccountPermissionsResponse.setAccountPermission(accounts);
+			loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			return loadAccountPermissionsResponse;
+		} catch (TransactionException e) {
+			loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return loadAccountPermissionsResponse;
+		}
+	}
+	
+	@Override
+	public LoadAccountPermissionsResponse loadAccountPermissionsByID(Holder<Header> headerParam,
+			LoadAccountPermissionsRequest req) {
+		LoadAccountPermissionsResponse loadAccountPermissionsResponse = new LoadAccountPermissionsResponse();
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			List<AccountPermissions> accounts = accountValidation.validateAccountPermissionByID(req.getId());
+			if (accounts == null) {
+				loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(Status.ACCOUNT_NOT_FOUND));
+				return loadAccountPermissionsResponse;
+			}
+			loadAccountPermissionsResponse.setAccountPermission(accounts);
+			loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			return loadAccountPermissionsResponse;
+		} catch (TransactionException e) {
+			loadAccountPermissionsResponse.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return loadAccountPermissionsResponse;
+		}
+	}
+
 }

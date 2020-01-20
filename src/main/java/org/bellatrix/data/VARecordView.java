@@ -8,6 +8,8 @@ public class VARecordView {
 	private String id;
 	private Date expiredAt;
 	private String formattedExpiredAt;
+	private Date createdDate;
+	private String formattedCreatedDate;
 	private String parentUsername;
 	private TransferTypes transferType;
 	private Integer bankID;
@@ -26,6 +28,7 @@ public class VARecordView {
 	private Date transactionDate;
 	private String paymentCode;
 	private VAEvent vaEvent;
+	private String description;
 
 	public String getId() {
 		return id;
@@ -193,6 +196,30 @@ public class VARecordView {
 
 	public void setPaymentCode(String paymentCode) {
 		this.paymentCode = paymentCode;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Date getCreatedDate() {
+		return createdDate;
+	}
+
+	public void setCreatedDate(Date createdDate) {
+		this.createdDate = createdDate;
+	}
+
+	public String getFormattedCreatedDate() {
+		return formattedCreatedDate;
+	}
+
+	public void setFormattedCreatedDate(String formattedCreatedDate) {
+		this.formattedCreatedDate = formattedCreatedDate;
 	}
 
 }

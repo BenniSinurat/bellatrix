@@ -86,15 +86,19 @@ public abstract class StatusBuilder {
 		case OTP_VALIDATION_FAILED:
 			return new ResponseStatus("T64", "OTP_VALIDATION_FAILED", "Wrong OTP, please retry");
 		case OTP_EXPIRED:
-			return new ResponseStatus("T65", "OTP_VALIDATION_FAILED", "OTP already expired, please retry");
+			return new ResponseStatus("T65", "OTP_EXPIRED", "OTP already expired, please retry");
 		case OTP_FAILED:
-			return new ResponseStatus("T66", "OTP_NOTIFICATION_FAILED", "OTP notification failed, please retry");
+			return new ResponseStatus("T66", "OTP_FAILED", "OTP notification failed, please retry");
 		case PAYMENT_NOT_FOUND:
 			return new ResponseStatus("T82", "PAYMENT_NOT_FOUND", "The specified Payment not found");
 		case BANK_NOT_FOUND:
 			return new ResponseStatus("I14", "BANK_NOT_FOUND", "The specified Bank not found");
 		case BANK_ACCOUNT_NOT_FOUND:
 			return new ResponseStatus("I14", "BANK_ACCOUNT_NOT_FOUND", "The specified Bank Account not found");
+		case BANK_ACCOUNT_LIMIT:
+			return new ResponseStatus("I15", "BANK_ACCOUNT_LIMIT", "You have reached your bank account");
+		case BANK_ACCOUNT_ALREADY_REGISTERED:
+			return new ResponseStatus("I16", "BANK_ACCOUNT_ALREADY_REGISTERED", "Bank Account already registered");
 		case PAYMENT_CODE_NOT_FOUND:
 			return new ResponseStatus("V14", "PAYMENT_CODE_NOT_FOUND",
 					"The specified Payment Code already expired or not found");
@@ -104,6 +108,14 @@ public abstract class StatusBuilder {
 			return new ResponseStatus("V04", "INVALID_AMOUNT", "Invalid transaction amount");
 		case BILLER_UNAVAILABLE:
 			return new ResponseStatus("B14", "BILLER_UNAVAILABLE", "No Biller available for specified member");
+		case INVALID_CURRENCY:
+			return new ResponseStatus("S24", "INVALID_CURRENCY", "Invalid currency");
+		case EMAIL_NOT_VERIFY:
+			return new ResponseStatus("E01", "EMAIL_NOT_VERIFY", "Please verify your email");
+		case KYC_REJECTED:
+			return new ResponseStatus("K01", "KYC_REJECTED", "Upgrade account has been rejected, please verify your data");
+		case KYC_PENDING:
+			return new ResponseStatus("K02", "KYC_PENDING", "Upgrade account in process");
 		default:
 			return new ResponseStatus("E99", "UNKNOWN_ERROR", "Unknown Error");
 		}

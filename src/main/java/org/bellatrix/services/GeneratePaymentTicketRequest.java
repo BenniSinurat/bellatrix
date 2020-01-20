@@ -13,6 +13,8 @@ public class GeneratePaymentTicketRequest implements Serializable {
 	 */
 	private static final long serialVersionUID = -3202674295323857555L;
 	private String toMember;
+	private String email;
+	private String name;
 	private BigDecimal amount;
 	private String description;
 	private Integer transferTypeID;
@@ -65,6 +67,22 @@ public class GeneratePaymentTicketRequest implements Serializable {
 
 	public void setInvoiceNumber(String invoiceNumber) {
 		this.invoiceNumber = invoiceNumber;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 }

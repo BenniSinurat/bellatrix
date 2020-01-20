@@ -60,5 +60,15 @@ public interface InterBank {
 	@WebMethod(action = "removeAccountTransfer")
 	public void removeAccountTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadAccountTransferRequest req) throws Exception;
+	
+	@WebMethod(action = "settlementTransferInquiry")
+	public SettlementTransferResponse settlementTransferInquiry(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam SettlementTransferRequest req) throws Exception;
+	
+	@WebMethod(action = "settlementTransferSettlement")
+	public BankAccountTransferResponse bankAccountTransferSettlement(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam BankAccountTransferRequest req) throws Exception;
 
 }

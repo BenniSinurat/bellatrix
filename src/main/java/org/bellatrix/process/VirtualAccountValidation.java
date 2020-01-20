@@ -6,14 +6,17 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.bellatrix.data.BillingStatus;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.RegisterVADoc;
+import org.bellatrix.data.ReportBillingRequest;
 import org.bellatrix.data.Status;
 import org.bellatrix.data.TransactionException;
 import org.bellatrix.data.TransferTypes;
 import org.bellatrix.data.VADetails;
 import org.bellatrix.data.VAEventDoc;
 import org.bellatrix.data.VARecordView;
+import org.bellatrix.data.VAStatusRecordView;
 import org.bellatrix.data.VirtualAccounts;
 import org.bellatrix.services.LoadVAByIDRequest;
 import org.bellatrix.services.LoadVAByMemberRequest;
@@ -50,7 +53,7 @@ public class VirtualAccountValidation {
 	private Logger logger = Logger.getLogger(VirtualAccountValidation.class);
 
 	public VADetails validateVARequest(String token, VARegisterRequest req) throws TransactionException {
-		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+		// IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		Members member = memberValidation.validateMember(req.getUsername(), false);
 		Members fromMember = null;
@@ -69,26 +72,29 @@ public class VirtualAccountValidation {
 
 		if (req.isPersistent() == false) {
 			if (req.getReferenceNumber().length() > va.getReferenceCodeLength().length()) {
-				//String rand = Utils.getRandomNumberInRange(va.getReferenceCodeLength());
-				String rand = Utils.getRandomNumberInRange("9")+req.getReferenceNumber();
-				paymentCode = va.getBinNumber() + rand.substring(0,va.getReferenceCodeLength().length());
+				// String rand = Utils.getRandomNumberInRange(va.getReferenceCodeLength());
+				String rand = Utils.getRandomNumberInRange("9") + req.getReferenceNumber();
+				paymentCode = va.getBinNumber() + rand.substring(0, va.getReferenceCodeLength().length());
 			} else {
-				//paymentCode = va.getBinNumber() + StringUtils.leftPad(req.getReferenceNumber(),	String.valueOf(va.getReferenceCodeLength()).length(), '0');
-				String rand = Utils.getRandomNumberInRange("9")+req.getReferenceNumber();
-				if(rand.length() > va.getReferenceCodeLength().length()) {
-					paymentCode = va.getBinNumber() + rand.substring(0,va.getReferenceCodeLength().length());
-				}else {
-					paymentCode = va.getBinNumber() + StringUtils.leftPad(rand,	String.valueOf(va.getReferenceCodeLength()).length(), '0');
+				// paymentCode = va.getBinNumber() +
+				// StringUtils.leftPad(req.getReferenceNumber(),
+				// String.valueOf(va.getReferenceCodeLength()).length(), '0');
+				String rand = Utils.getRandomNumberInRange("9") + req.getReferenceNumber();
+				if (rand.length() > va.getReferenceCodeLength().length()) {
+					paymentCode = va.getBinNumber() + rand.substring(0, va.getReferenceCodeLength().length());
+				} else {
+					paymentCode = va.getBinNumber()
+							+ StringUtils.leftPad(rand, String.valueOf(va.getReferenceCodeLength()).length(), '0');
 				}
 			}
 		} else {
 			String rand = Utils.getRandomNumberInRange(va.getReferenceCodeLength());
 			paymentCode = va.getBinNumber() + rand;
 		}
-		
+
 		RegisterVADoc rv = baseRepository.getPersistenceRepository()
 				.retrieve(new Query(Criteria.where("_id").is(paymentCode)), RegisterVADoc.class);
-		//RegisterVADoc rv = mapRVAMap.get(paymentCode);
+		// RegisterVADoc rv = mapRVAMap.get(paymentCode);
 		if (rv != null) {
 			throw new TransactionException(String.valueOf(Status.DUPLICATE_TRANSACTION));
 		}
@@ -104,12 +110,10 @@ public class VirtualAccountValidation {
 
 	public RegisterVADoc validateVAPaymentCode(String token, String paymentCode, String username)
 			throws TransactionException {
-		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		RegisterVADoc rva = baseRepository.getPersistenceRepository()
 				.retrieve(new Query(Criteria.where("_id").is(paymentCode)), RegisterVADoc.class);
-		//RegisterVADoc rva = mapRVAMap.get(paymentCode);
-		logger.info("PAYMENT CODE: "+rva);
+
 		if (rva == null) {
 			throw new TransactionException(String.valueOf(Status.PAYMENT_CODE_NOT_FOUND));
 		}
@@ -123,16 +127,15 @@ public class VirtualAccountValidation {
 	}
 
 	public VADetails validateVAPayment(String token, VAPaymentRequest req) throws TransactionException {
-		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		Members fromMember = memberValidation.validateMember(req.getFromMember(), true);
 		RegisterVADoc rva = baseRepository.getPersistenceRepository()
 				.retrieve(new Query(Criteria.where("_id").is(req.getPaymentCode())), RegisterVADoc.class);
-		//RegisterVADoc rva = mapRVAMap.get(req.getPaymentCode());
+
 		if (rva == null) {
 			throw new TransactionException(String.valueOf(Status.PAYMENT_CODE_NOT_FOUND));
 		} else {
-			logger.info("PAYMENT CODE: " + rva.getPaymentCode() + "/EXPIRED DATE: " +rva.getExpiredAt());
+			logger.info("PAYMENT CODE: " + rva.getPaymentCode() + "/EXPIRED DATE: " + rva.getExpiredAt());
 			String id = baseRepository.getVirtualAccountRepository().getVAID(rva);
 			logger.info("ID " + id);
 			if (id == null) {
@@ -151,13 +154,7 @@ public class VirtualAccountValidation {
 			if (rva.getMinimumPayment() != null && rva.getMinimumPayment().compareTo(BigDecimal.ZERO) != 0
 					&& rva.getMinimumPayment().compareTo(req.getAmount()) == 0) {
 				throw new TransactionException(String.valueOf(Status.INVALID_AMOUNT));
-			} /**
-				 * else { BigDecimal newAmount = rva.getAmount().subtract(req.getAmount()); if
-				 * (newAmount.compareTo(BigDecimal.ZERO) > 0) {
-				 * rva.setAmount(rva.getAmount().subtract(req.getAmount()));
-				 * baseRepository.getPersistenceRepository().update(rva);; } else { throw new
-				 * TransactionException(String.valueOf(Status.INVALID_AMOUNT)); } }
-				 */
+			}
 		}
 
 		VADetails vad = new VADetails();
@@ -168,10 +165,10 @@ public class VirtualAccountValidation {
 	}
 
 	public void validateVADeletion(String token, VADeleteRequest req) throws TransactionException {
-		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+		// IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		memberValidation.validateMember(req.getUsername(), true);
-		//RegisterVADoc rva = mapRVAMap.get(req.getPaymentCode());
+
 		RegisterVADoc rva = baseRepository.getPersistenceRepository()
 				.retrieve(new Query(Criteria.where("_id").is(req.getPaymentCode())), RegisterVADoc.class);
 		if (rva == null) {
@@ -181,8 +178,9 @@ public class VirtualAccountValidation {
 		if (!rva.getMember().getUsername().equalsIgnoreCase(req.getUsername())) {
 			throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
 		}
-		//mapRVAMap.delete(req.getPaymentCode());
-		baseRepository.getPersistenceRepository().delete(new Query(Criteria.where("_id").is(req.getPaymentCode())), RegisterVADoc.class);
+		// mapRVAMap.delete(req.getPaymentCode());
+		baseRepository.getPersistenceRepository().delete(new Query(Criteria.where("_id").is(req.getPaymentCode())),
+				RegisterVADoc.class);
 		baseRepository.getVirtualAccountRepository().deleteVA(req.getPaymentCode());
 	}
 
@@ -192,7 +190,7 @@ public class VirtualAccountValidation {
 		List<BankVA> bankVA = baseRepository.getVirtualAccountRepository().loadBankVA(member.getId());
 		return bankVA;
 	}
-	
+
 	public List<BankVA> validateListBankVA(String token, VABankRequest req) throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 		List<BankVA> bankVA = baseRepository.getVirtualAccountRepository().listBankVA();
@@ -217,19 +215,31 @@ public class VirtualAccountValidation {
 		return bankVA;
 	}
 
-	public List<RegisterVADoc> validateLoadVA(String token, LoadVAByMemberRequest request) throws TransactionException {
-		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+	public List<VARecordView> validateLoadVA(String token, LoadVAByMemberRequest request, Members member)
+			throws TransactionException {
+		// IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
-		List<RegisterVADoc> listVA = new LinkedList<RegisterVADoc>();
-		Pageable paging = new PageRequest(request.getCurrentPage(), request.getPageSize());
-		Query query = new Query();
-		query.addCriteria(Criteria.where("member.username").is(request.getUsername()));
-		query.with(paging);
-		query.with(new Sort(Sort.Direction.DESC, "createdDate"));
-		
-		//listVA = mapRVAMap.getAll();
-		listVA = baseRepository.getPersistenceRepository().loadAll(query, RegisterVADoc.class);
+		List<VARecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByMember(member,
+				request.getCurrentPage(), request.getPageSize());
+
+		// listVA = mapRVAMap.getAll();
 		return listVA;
+	}
+
+	public Integer totalVAByMemberID(Members member) {
+		List<VARecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByMemberID(member);
+		logger.info("COUNT VA: " + listVA.size());
+		List<VARecordView> listVaView = new LinkedList<VARecordView>();
+		for (int i = 0; i < listVA.size(); i++) {
+			RegisterVADoc rv = baseRepository.getPersistenceRepository()
+					.retrieve(new Query(Criteria.where("_id").is(listVA.get(i).getPaymentCode())), RegisterVADoc.class);
+			if (rv != null) {
+				VARecordView vaView = new VARecordView();
+				vaView.setId(listVA.get(i).getPaymentCode());
+				listVaView.add(vaView);
+			}
+		}
+		return listVaView.size();
 	}
 
 	public List<RegisterVADoc> validateLoadVA(String token, LoadVAByIDRequest request) throws TransactionException {
@@ -291,23 +301,86 @@ public class VirtualAccountValidation {
 				VAEventDoc.class);
 	}
 
-	public List<VARecordView> validateLoadVAStatus(String token, LoadVAStatusByMemberRequest req, Integer memberID)
+	public List<BankVA> validateVAByMemberStatus(String token, LoadVAStatusByMemberRequest req)
 			throws TransactionException {
+		webserviceValidation.validateWebservice(token);
+		Members member = memberValidation.validateMember(req.getUsername(), true);
+		List<BankVA> bankVA = baseRepository.getVirtualAccountRepository().loadBankVA(member.getId());
+		return bankVA;
+	}
+
+	public List<VAStatusRecordView> validateLoadVAStatus(String token, LoadVAStatusByMemberRequest req,
+			Integer memberID) throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 
 		String fromDate = req.getFromDate() != null ? req.getFromDate() : Utils.GetDate("yyyy-MM-dd");
 		String toDate = req.getFromDate() != null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
-		logger.info("From Date: " + fromDate + " /To Date: " + toDate);
-		List<VARecordView> listVA = new LinkedList<VARecordView>();
-		listVA = baseRepository.getVirtualAccountRepository().loadVAByStatus(req.getUsername(), memberID, fromDate,
-				toDate, req.getCurrentPage(), req.getPageSize());
+
+		List<VAStatusRecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByStatus(req.getUsername(),
+				memberID, fromDate, toDate, req.getCurrentPage(), req.getPageSize());
 		return listVA;
 	}
-	
-	public void validateVABillingStatus(String token, String username, String traceNumber, String transactionNumber) throws TransactionException {
+
+	public List<BillingStatus> validateVAStatus(Integer ID, String paymentCode) throws TransactionException {
+		RegisterVADoc rva = baseRepository.getPersistenceRepository()
+				.retrieve(new Query(Criteria.where("_id").is(paymentCode)), RegisterVADoc.class);
+		List<BillingStatus> listVAStatus = baseRepository.getVirtualAccountRepository().getVAPaymentStatus(ID);
+		if (rva == null) {
+			if (listVAStatus.size() > 0) {
+				for (int i = 0; i < listVAStatus.size(); i++) {
+					if (listVAStatus.get(i).getStatus().equalsIgnoreCase("PROCESSED")) {
+						listVAStatus.get(i).setStatus("PAID");
+					} else if (listVAStatus.get(i).getStatus().equalsIgnoreCase("REVERSED")) {
+						listVAStatus.get(i).setStatus("REVERSED");
+					} else {
+						listVAStatus.get(i).setStatus("PENDING");
+					}
+				}
+			} else {
+				BillingStatus va = new BillingStatus();
+				va.setStatus("EXPIRED");
+				va.setReferenceNumber("");
+				va.setTransactionDate(null);
+				va.setTransactionNumber("");
+				listVAStatus.add(va);
+			}
+		} else {
+			if (listVAStatus.size() > 0) {
+				for (int i = 0; i < listVAStatus.size(); i++) {
+					if (listVAStatus.get(i).getStatus().equalsIgnoreCase("PROCESSED")) {
+						listVAStatus.get(i).setStatus("PAID");
+					} else if (listVAStatus.get(i).getStatus().equalsIgnoreCase("REVERSED")) {
+						listVAStatus.get(i).setStatus("REVERSED");
+					} else {
+						listVAStatus.get(i).setStatus("PENDING");
+					}
+				}
+			} else {
+				BillingStatus va = new BillingStatus();
+				va.setStatus("UNPAID");
+				va.setReferenceNumber("");
+				va.setTransactionDate(null);
+				va.setTransactionNumber("");
+				listVAStatus.add(va);
+			}
+
+		}
+		return listVAStatus;
+	}
+
+	public void validateVABillingStatus(String token, String username, String traceNumber, String transactionNumber)
+			throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 		memberValidation.validateMember(username, true);
 		baseRepository.getVirtualAccountRepository().updateStatusBillingVA(traceNumber, transactionNumber);
 	}
 
+	public List<VAStatusRecordView> validateReportBilling(String token, ReportBillingRequest req,
+			Integer memberID) throws TransactionException {
+		webserviceValidation.validateWebservice(token);
+
+		List<VAStatusRecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAReport(req.getUsername(),
+				memberID);
+		return listVA;
+	}
 }

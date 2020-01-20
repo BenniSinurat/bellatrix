@@ -7,7 +7,7 @@ import org.bellatrix.data.Members;
 import org.bellatrix.data.ResponseStatus;
 
 public class VAInquiryResponse {
-
+	private String email;
 	private String name;
 	private BigDecimal amount;
 	private BigDecimal minimumPayment;
@@ -19,10 +19,12 @@ public class VAInquiryResponse {
 	private String bankCode;
 	private boolean persistent;
 	private Date expiredAt;
+	private String formattedExpiredAt;
 	private String ticketID;
+	private String description;
 	private BigDecimal finalAmount;
 	private BigDecimal totalFees;
-	
+
 	private ResponseStatus status;
 
 	public ResponseStatus getStatus() {
@@ -31,6 +33,14 @@ public class VAInquiryResponse {
 
 	public void setStatus(ResponseStatus status) {
 		this.status = status;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
 	}
 
 	public String getName() {
@@ -71,6 +81,14 @@ public class VAInquiryResponse {
 
 	public void setExpiredAt(Date expiredAt) {
 		this.expiredAt = expiredAt;
+	}
+
+	public String getFormattedExpiredAt() {
+		return formattedExpiredAt;
+	}
+
+	public void setFormattedExpiredAt(String formattedExpiredAt) {
+		this.formattedExpiredAt = formattedExpiredAt;
 	}
 
 	public String getTicketID() {
@@ -143,6 +161,14 @@ public class VAInquiryResponse {
 
 	public void setTotalFees(BigDecimal totalFees) {
 		this.totalFees = totalFees;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 }

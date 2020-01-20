@@ -8,6 +8,7 @@ import org.bellatrix.data.ResponseStatus;
 public class LoadAccountTransferResponse {
 
 	private List<AccountTransfer> accountTransfer;
+	private Integer totalRecords;
 	private ResponseStatus status;
 
 	public List<AccountTransfer> getAccountTransfer() {
@@ -24,6 +25,14 @@ public class LoadAccountTransferResponse {
 
 	public void setStatus(ResponseStatus status) {
 		this.status = status;
+	}
+
+	public Integer getTotalRecords() {
+		return totalRecords;
+	}
+
+	public void setTotalRecords(Integer totalRecords) {
+		this.totalRecords = totalRecords;
 	}
 
 }

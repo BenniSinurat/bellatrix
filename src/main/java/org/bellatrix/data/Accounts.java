@@ -19,7 +19,11 @@ public class Accounts implements Serializable {
 	private BigDecimal creditLimit;
 	private BigDecimal upperCreditLimit;
 	private BigDecimal lowerCreditLimit;
-	private Integer groupId;
+	private Currencies currency;
+	private Groups group;
+	private String formattedCreditLimit;
+	private String formattedUpperCreditLimit;
+	private String formattedLowerCreditLimit;
 
 	public String getName() {
 		return name;
@@ -93,12 +97,44 @@ public class Accounts implements Serializable {
 		this.formattedCreatedDate = formattedCreatedDate;
 	}
 
-	public Integer getGroupId() {
-		return groupId;
+	public Currencies getCurrency() {
+		return currency;
 	}
 
-	public void setGroupId(Integer groupId) {
-		this.groupId = groupId;
+	public void setCurrency(Currencies currency) {
+		this.currency = currency;
+	}
+
+	public Groups getGroup() {
+		return group;
+	}
+
+	public void setGroup(Groups group) {
+		this.group = group;
+	}
+
+	public String getFormattedCreditLimit() {
+		return formattedCreditLimit;
+	}
+
+	public void setFormattedCreditLimit(String formattedCreditLimit) {
+		this.formattedCreditLimit = formattedCreditLimit;
+	}
+
+	public String getFormattedUpperCreditLimit() {
+		return formattedUpperCreditLimit;
+	}
+
+	public void setFormattedUpperCreditLimit(String formattedUpperCreditLimit) {
+		this.formattedUpperCreditLimit = formattedUpperCreditLimit;
+	}
+
+	public String getFormattedLowerCreditLimit() {
+		return formattedLowerCreditLimit;
+	}
+
+	public void setFormattedLowerCreditLimit(String formattedLowerCreditLimit) {
+		this.formattedLowerCreditLimit = formattedLowerCreditLimit;
 	}
 
 }

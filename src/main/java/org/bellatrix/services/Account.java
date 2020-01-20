@@ -11,30 +11,35 @@ import org.bellatrix.data.TransactionException;
 @SOAPBinding(style = SOAPBinding.Style.DOCUMENT, use = SOAPBinding.Use.LITERAL, parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @WebService
 public interface Account {
-
-	@WebMethod(action = "loadAccounts")
-	public LoadAccountsResponse loadAccounts(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam LoadAccountsRequest req);
-
+	
+	@WebMethod(action = "loadAccountsByID")
+	public LoadAccountsByIDResponse loadAccountsByID(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadAccountsByIDRequest req);
+	
 	@WebMethod(action = "loadAccountsByGroups")
 	public LoadAccountsByGroupsResponse loadAccountsByGroups(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadAccountsByGroupsRequest req);
 
-	@WebMethod(action = "loadAccountsByID")
-	public LoadAccountsByIDResponse loadAccountsByID(
-			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam LoadAccountsByIDRequest req);
-
 	@WebMethod(action = "loadBalanceInquiry")
 	public BalanceInquiryResponse loadBalanceInquiry(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam BalanceInquiryRequest req);
-
+	
 	@WebMethod(action = "loadTransactionHistory")
 	public TransactionHistoryResponse loadTransactionHistory(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam TransactionHistoryRequest req);
+	
+	@WebMethod(action = "loadAccounts")
+	public LoadAccountsResponse loadAccounts(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadAccountsRequest req);
+	
+	@WebMethod(action = "loadAllAccounts")
+	public LoadAccountsResponse loadAllAccounts(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadAccountsRequest req);
 
 	@WebMethod(action = "createAccount")
 	public void createAccount(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
@@ -56,13 +61,26 @@ public interface Account {
 	public void deleteAccountPermission(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam AccountsPermissionRequest req) throws TransactionException;
 
-	@WebMethod(action = "loadAllAccounts")
-	public LoadAccountsResponse loadAllAccounts(
-			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam LoadAccountsRequest req);
+	@WebMethod(action = "loadCurrency")
+	public CurrencyResponse loadCurrency(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam CurrencyRequest req) throws TransactionException;
 
-	@WebMethod(action = "loadPermissionByAccountID")
-	public AccountsPermissionResponse loadPermissionByAccountID(
+	@WebMethod(action = "createCurrency")
+	public void createCurrency(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam CurrencyRequest req) throws TransactionException;
+
+	@WebMethod(action = "updateCurrency")
+	public void updateCurrency(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam CurrencyRequest req) throws TransactionException;
+	
+	@WebMethod(action = "loadAccountPermissionsByID")
+	public LoadAccountPermissionsResponse loadAccountPermissionsByID(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam AccountsPermissionRequest req);
+			@WebParam LoadAccountPermissionsRequest req);
+	
+	@WebMethod(action = "loadAccountPermissionsByAccount")
+	public LoadAccountPermissionsResponse loadAccountPermissionsByAccount(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadAccountPermissionsRequest req);
+
 }

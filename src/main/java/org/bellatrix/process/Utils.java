@@ -16,10 +16,26 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
+import org.apache.log4j.Logger;
 
 public abstract class Utils {
-
+	private static Logger logger = Logger.getLogger(Utils.class);
 	private static Long long1;
+
+	public static String formatAmount(BigDecimal amount, String grouping, String decimal, String format, String prefix,
+			String trailer) {
+		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
+		symbols.setGroupingSeparator(grouping.charAt(0));
+		symbols.setDecimalSeparator(decimal.charAt(0));
+		DecimalFormat df = new DecimalFormat(format, symbols);
+		if (prefix == null) {
+			prefix = "";
+		}
+		if (trailer == null) {
+			trailer = "";
+		}
+		return prefix + df.format(amount) + " " + trailer;
+	}
 
 	public static String formatAmount(BigDecimal amount) {
 		DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
@@ -92,12 +108,13 @@ public abstract class Utils {
 	public static String formatDate(Date date) {
 		return DateFormatUtils.format(date, "yyyy-MM-dd HH:mm:ss");
 	}
-	
+
 	public static long datetimeToLong(String date) {
+		logger.info("DATE EXPIRED: " + date);
 		SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
 		try {
-		Date d = format.parse(date);
-		long expired = d.getTime();
+			Date d = format.parse(date);
+			long expired = d.getTime();
 			return expired;
 		} catch (Exception e) {
 			long1 = (Long) null;

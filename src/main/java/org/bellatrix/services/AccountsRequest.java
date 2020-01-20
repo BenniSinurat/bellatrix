@@ -1,13 +1,12 @@
 package org.bellatrix.services;
 
-import java.math.BigDecimal;
-
 public class AccountsRequest {
 
 	private Integer id;
 	private String name;
 	private String description;
 	private boolean systemAccount;
+	private Integer currencyID;
 
 	public String getName() {
 		return name;
@@ -39,6 +38,14 @@ public class AccountsRequest {
 
 	public void setId(Integer id) {
 		this.id = id;
+	}
+
+	public Integer getCurrencyID() {
+		return currencyID;
+	}
+
+	public void setCurrencyID(Integer currencyID) {
+		this.currencyID = currencyID;
 	}
 
 }

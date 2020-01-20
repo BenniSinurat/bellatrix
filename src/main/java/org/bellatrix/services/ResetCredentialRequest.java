@@ -3,6 +3,7 @@ package org.bellatrix.services;
 public class ResetCredentialRequest {
 
 	private String username;
+	private String usernameMember;
 	private String email;
 	private Integer accessTypeID;
 
@@ -12,6 +13,14 @@ public class ResetCredentialRequest {
 
 	public void setUsername(String username) {
 		this.username = username;
+	}
+
+	public String getUsernameMember() {
+		return usernameMember;
+	}
+
+	public void setUsernameMember(String usernameMember) {
+		this.usernameMember = usernameMember;
 	}
 
 	public String getEmail() {

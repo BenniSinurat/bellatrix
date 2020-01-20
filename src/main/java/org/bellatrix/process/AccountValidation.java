@@ -1,13 +1,17 @@
 package org.bellatrix.process;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.bellatrix.data.AccountPermissions;
 import org.bellatrix.data.Accounts;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.Status;
 import org.bellatrix.data.TransactionException;
 import org.bellatrix.data.TransferTypes;
+import org.bellatrix.data.Transfers;
+import org.bellatrix.services.LoadAccountsByGroupsRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -37,6 +41,28 @@ public class AccountValidation {
 		return fromAccount;
 	}
 
+	public List<AccountPermissions> validateAccountPermission(Integer accountID) throws TransactionException {
+		List<AccountPermissions> accountPermission = null;
+		accountPermission = baseRepository.getAccountRepository().loadGroupPermissionByAccounts(accountID);
+
+		if (accountPermission.size() == 0) {
+			logger.info("[Invalid AccountID [" + accountID + "]");
+			throw new TransactionException(String.valueOf(Status.INVALID_ACCOUNT));
+		}
+		return accountPermission;
+	}
+
+	public List<AccountPermissions> validateAccountPermissionByID(Integer id) throws TransactionException {
+		List<AccountPermissions> accountPermission = null;
+		accountPermission = baseRepository.getAccountRepository().loadGroupPermissionByID(id);
+
+		if (accountPermission.size() == 0) {
+			logger.info("[Invalid Permission ID [" + id + "]");
+			throw new TransactionException(String.valueOf(Status.INVALID_ACCOUNT));
+		}
+		return accountPermission;
+	}
+
 	public Accounts validateAccount(Integer accountID, Integer groupID) throws TransactionException {
 		Accounts fromAccount = null;
 
@@ -52,6 +78,10 @@ public class AccountValidation {
 			throw new TransactionException(String.valueOf(Status.INVALID_ACCOUNT));
 		}
 		return fromAccount;
+	}
+
+	public List<Accounts> validateAccountByGroup(LoadAccountsByGroupsRequest req) {
+		return baseRepository.getAccountRepository().loadAccountsByGroups(req);
 	}
 
 	public Accounts validateAccount(TransferTypes transferType, Members member, boolean source)
@@ -146,4 +176,40 @@ public class AccountValidation {
 		return balance;
 	}
 
+	public BigDecimal loadBalanceInquiry(String username, Integer accountID) {
+		return baseRepository.getAccountRepository().loadBalanceInquiry(username, accountID);
+	}
+
+	public BigDecimal loadReservedAmount(String username, Integer accountID) {
+		return baseRepository.getAccountRepository().loadReservedAmount(username, accountID);
+	}
+
+	public Integer countTotalTransaction(Integer memberID, Integer accountID, String fromDate, String toDate) {
+		return baseRepository.getAccountRepository().countTotalTransaction(memberID, accountID, fromDate, toDate);
+	}
+
+	public Integer countTotalRecords() {
+		return baseRepository.getAccountRepository().countTotalRecords();
+
+	}
+
+	public Integer countTotalAccounts() {
+		return baseRepository.getAccountRepository().countTotalAccount();
+
+	}
+
+	public List<Transfers> loadTransferFromUsername(String username, Integer accountID, Integer currentPage,
+			Integer pageSize, String fromDate, String toDate, String orderBy, String orderType) {
+		return baseRepository.getAccountRepository().loadTransferFromUsername(username, accountID, currentPage,
+				pageSize, fromDate, toDate, orderBy, orderType);
+
+	}
+
+	public boolean validateAccountCurrency(Accounts fromAccount, Accounts toAccount) throws TransactionException {
+		if (fromAccount.getCurrency().getId() == toAccount.getCurrency().getId()) {
+			return true;
+		} else {
+			throw new TransactionException(String.valueOf(Status.INVALID_CURRENCY));
+		}
+	}
 }

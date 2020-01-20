@@ -10,14 +10,17 @@ public class TransferHistory {
 	private String traceNumber;
 	private MemberView fromMember;
 	private MemberView toMember;
+	private MemberView reverseBy;
 	private TransferTypeFields transferType;
 	private BigDecimal amount;
+	private String formattedAmount;
 	private String transactionNumber;
 	private String parentID;
 	private String description;
 	private boolean chargedBack;
 	private String transactionState;
 	private Date transactionDate;
+	private String formattedTransactionDate;
 	private List<PaymentFields> customFields;
 
 	public Date getTransactionDate() {
@@ -34,6 +37,14 @@ public class TransferHistory {
 
 	public void setAmount(BigDecimal amount) {
 		this.amount = amount;
+	}
+
+	public String getFormattedAmount() {
+		return formattedAmount;
+	}
+
+	public void setFormattedAmount(String formattedAmount) {
+		this.formattedAmount = formattedAmount;
 	}
 
 	public String getTransactionNumber() {
@@ -122,6 +133,22 @@ public class TransferHistory {
 
 	public void setTransactionState(String transactionState) {
 		this.transactionState = transactionState;
+	}
+
+	public MemberView getReverseBy() {
+		return reverseBy;
+	}
+
+	public void setReverseBy(MemberView reverseBy) {
+		this.reverseBy = reverseBy;
+	}
+
+	public String getFormattedTransactionDate() {
+		return formattedTransactionDate;
+	}
+
+	public void setFormattedTransactionDate(String formattedTransactionDate) {
+		this.formattedTransactionDate = formattedTransactionDate;
 	}
 
 }

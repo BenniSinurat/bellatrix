@@ -34,6 +34,7 @@ public class RegisterVADoc {
 	private String ticketID;
 	private LocalDateTime createdDate;
 	private String paymentCode;
+	private String description;
 	private FeeResult fees;
 
 	public String getId() {
@@ -210,6 +211,14 @@ public class RegisterVADoc {
 
 	public void setFees(FeeResult fees) {
 		this.fees = fees;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 }

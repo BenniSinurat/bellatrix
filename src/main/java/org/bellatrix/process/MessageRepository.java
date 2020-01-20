@@ -41,6 +41,7 @@ public class MessageRepository {
 							message.setBody(rs.getString("body"));
 							message.setRead(rs.getBoolean("read"));
 							message.setDate(rs.getTimestamp("date"));
+							message.setFormattedDate(Utils.formatDate(rs.getTimestamp("date")));
 							return message;
 						}
 					});
@@ -64,6 +65,7 @@ public class MessageRepository {
 							message.setBody(rs.getString("body"));
 							message.setRead(rs.getBoolean("read"));
 							message.setDate(rs.getTimestamp("date"));
+							message.setFormattedDate(Utils.formatDate(rs.getTimestamp("date")));
 							return message;
 						}
 					});

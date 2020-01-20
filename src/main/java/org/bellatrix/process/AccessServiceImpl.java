@@ -7,6 +7,7 @@ import java.util.Map;
 
 import javax.xml.ws.Holder;
 
+import org.apache.log4j.Logger;
 import org.bellatrix.data.AccessStatus;
 import org.bellatrix.data.AccessType;
 import org.bellatrix.data.Accesses;
@@ -51,6 +52,7 @@ public class AccessServiceImpl implements Access {
 	private MemberValidation memberValidation;
 	@Autowired
 	private Configurator configurator;
+	private Logger logger = Logger.getLogger(AccessServiceImpl.class);
 
 	@Override
 	@Transactional
@@ -140,34 +142,76 @@ public class AccessServiceImpl implements Access {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			Members member = memberValidation.validateMember(req.getUsername(), true);
 
-			if (member.getEmail() != null) {
-				if (!member.getEmail().equalsIgnoreCase(req.getEmail())) {
-					reset.setStatus(StatusBuilder.getStatus(Status.MEMBER_NOT_FOUND));
-					return reset;
+			if (req.getUsernameMember() != null) {
+				Members user = memberValidation.validateMember(req.getUsernameMember(), true);
+				if (user.getGroupID() != 1) {
+					logger.info("[RESET BY: " + user.getName() + " /GROUP ID: " + user.getGroupID() + "]");
+					if (req.getEmail().length() > 4) {
+						if (req.getEmail().equalsIgnoreCase(member.getEmail())) {
+							if (member.getEmailVerify().equals(false)) {
+								reset.setStatus(StatusBuilder.getStatus(Status.EMAIL_NOT_VERIFY));
+								return reset;
+							}
+						} else {
+							reset.setStatus(StatusBuilder.getStatus(Status.MEMBER_NOT_FOUND));
+							return reset;
+						}
+					}
+				} else {
+					logger.info("[RESET BY: " + user.getName() + " /GROUP ID: " + user.getGroupID() + "]");
+					if (!req.getEmail().equalsIgnoreCase(member.getEmail())) {
+						reset.setStatus(StatusBuilder.getStatus(Status.MEMBER_NOT_FOUND));
+						return reset;
+					}
 				}
 			} else {
-				reset.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-				return reset;
-
+				logger.info("[RESET BY: " + req.getUsernameMember() + "]");
+				if (req.getEmail().length() > 4) {
+					if (req.getEmail().equalsIgnoreCase(member.getEmail())) {
+						if (member.getEmailVerify().equals(false)) {
+							reset.setStatus(StatusBuilder.getStatus(Status.EMAIL_NOT_VERIFY));
+							return reset;
+						}
+					} else {
+						reset.setStatus(StatusBuilder.getStatus(Status.MEMBER_NOT_FOUND));
+						return reset;
+					}
+				}
 			}
 
 			Groups group = baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID());
 			String newCredential = Utils.GenerateRandomNumber(group.getPinLength());
 
-			/*
-			 * SEND EMAIL HERE
-			 */
-			Notifications notif = new Notifications();
-			notif.setModuleURL("notification.email");
-			notif.setNotificationType("resetCredential");
-
-			List<Notifications> lm = new LinkedList<Notifications>();
-			lm.add(notif);
-
 			HashMap<String, Object> notifMap = new HashMap<String, Object>();
-			notifMap.put("notification", lm);
-			notifMap.put("email", member.getEmail());
-			notifMap.put("pin", newCredential);
+			if (req.getEmail().length() > 4) {
+				/*
+				 * SEND EMAIL HERE
+				 */
+				Notifications notif = new Notifications();
+				notif.setModuleURL("notification.email");
+				notif.setNotificationType("resetCredential");
+
+				List<Notifications> lm = new LinkedList<Notifications>();
+				lm.add(notif);
+
+				notifMap.put("notification", lm);
+				notifMap.put("email", member.getEmail());
+				notifMap.put("pin", newCredential);
+			} else {
+				/*
+				 * SEND SMS HERE
+				 */
+				Notifications notif = new Notifications();
+				notif.setModuleURL("notification.sms");
+				notif.setNotificationType("resetCredentialOTP");
+
+				List<Notifications> lm = new LinkedList<Notifications>();
+				lm.add(notif);
+
+				notifMap.put("notification", lm);
+				notifMap.put("msisdn", member.getMsisdn());
+				notifMap.put("pin", newCredential);
+			}
 
 			MuleClient client;
 			client = new MuleClient(configurator.getMuleContext());
@@ -231,7 +275,8 @@ public class AccessServiceImpl implements Access {
 	}
 
 	@Override
-	public LoadAccessTypeResponse loadAccessType(Holder<Header> headerParam, LoadAccessTypeRequest req) throws Exception {
+	public LoadAccessTypeResponse loadAccessType(Holder<Header> headerParam, LoadAccessTypeRequest req)
+			throws Exception {
 		LoadAccessTypeResponse latr = new LoadAccessTypeResponse();
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
@@ -239,17 +284,18 @@ public class AccessServiceImpl implements Access {
 				req.setCurrentPage(0);
 				req.setPageSize(0);
 			}
-			List<AccessType> accessType = baseRepository.getAccessRepository().getAllCredentialType(req.getCurrentPage(), req.getPageSize());
+			List<AccessType> accessType = baseRepository.getAccessRepository()
+					.getAllCredentialType(req.getCurrentPage(), req.getPageSize());
 			Integer totalRecords = baseRepository.getAccessRepository().countTotalAccount();
 			latr.setAccessType(accessType);
 			latr.setTotalRecords(totalRecords);
 			latr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return latr;
-		}catch(TransactionException e) {
+		} catch (TransactionException e) {
 			latr.setStatus(StatusBuilder.getStatus(e.getMessage()));
 			return latr;
 		}
-		
+
 	}
 
 	@Override

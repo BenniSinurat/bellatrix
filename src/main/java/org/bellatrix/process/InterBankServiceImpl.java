@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.xml.ws.Holder;
 
@@ -35,6 +36,8 @@ import org.bellatrix.services.LoadBankTransferResponse;
 import org.bellatrix.services.PaymentDetails;
 import org.bellatrix.services.PaymentRequest;
 import org.bellatrix.services.RegisterAccountTransferRequest;
+import org.bellatrix.services.SettlementTransferRequest;
+import org.bellatrix.services.SettlementTransferResponse;
 import org.bellatrix.services.TopupParamRequest;
 import org.bellatrix.services.TopupRequest;
 import org.bellatrix.services.TopupResponse;
@@ -195,7 +198,8 @@ public class InterBankServiceImpl implements InterBank {
 			}
 
 			Transfers mainTransfers = listMainTransfers.get(0);
-			baseRepository.getTransferRepository().reverseTransaction(mainTransfers.getTransactionNumber());
+			baseRepository.getTransferRepository().reverseTransaction(mainTransfers.getToMemberID(),
+					mainTransfers.getTransactionNumber());
 			tr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return tr;
 
@@ -419,8 +423,10 @@ public class InterBankServiceImpl implements InterBank {
 				accTransfer = baseRepository.getInterBankRepository().loadBankAccountListByNo(member.getId(),
 						req.getAccountNo());
 			}
+			Integer totalRecords = baseRepository.getInterBankRepository().countTotalbankAccounts(member.getId());
 
 			loadAccountResponse.setAccountTransfer(accTransfer);
+			loadAccountResponse.setTotalRecords(totalRecords);
 			loadAccountResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return loadAccountResponse;
 		} catch (TransactionException ex) {
@@ -442,12 +448,20 @@ public class InterBankServiceImpl implements InterBank {
 			}
 
 			List<AccountTransfer> accTransfer = baseRepository.getInterBankRepository()
-					.loadBankAccountListByNo(member.getId(), req.getAccountNo());
-
-			if (accTransfer.size() == 0) {
+					.loadBankAccountListByMember(member.getId(), 0, 100);
+			logger.info("[Bank Account Transfer List Size: " + accTransfer.size() + "]");
+			if (accTransfer.size() > 0 && accTransfer.size() < 4) {
+				List<AccountTransfer> accTransferNo = baseRepository.getInterBankRepository()
+						.loadBankAccountListByNo(member.getId(), req.getAccountNo());
+				if (accTransferNo.size() > 0) {
+					throw new TransactionException(String.valueOf(Status.BANK_ACCOUNT_ALREADY_REGISTERED));
+				} else {
+					baseRepository.getInterBankRepository().insertBankAccount(member.getId(), req);
+				}
+			} else if (accTransfer.size() == 0) {
 				baseRepository.getInterBankRepository().insertBankAccount(member.getId(), req);
 			} else {
-				throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
+				throw new TransactionException(String.valueOf(Status.BANK_ACCOUNT_LIMIT));
 			}
 		} catch (TransactionException ex) {
 			throw new TransactionException(String.valueOf(ex.getMessage()));
@@ -522,6 +536,131 @@ public class InterBankServiceImpl implements InterBank {
 			baseRepository.getInterBankRepository().removeBankAccount(req.getId(), member.getId());
 		} catch (Exception ex) {
 			throw new TransactionException(String.valueOf(ex.getMessage()));
+		}
+	}
+
+	@Override
+	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
+		SettlementTransferResponse atr = new SettlementTransferResponse();
+		try {
+			IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
+			
+			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
+			bAccTrf.setAccountName(req.getAccountName());
+			bAccTrf.setAccountNumber(req.getAccountNumber());
+			bAccTrf.setAmount(req.getAmount());
+			bAccTrf.setTraceNumber(req.getTraceNumber());
+			bAccTrf.setUsername(req.getUsername());
+			
+			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
+			PaymentDetails pd = new PaymentDetails();
+			pd.setFromMember(bank.getFromMember());
+
+			String tktID = UUID.randomUUID().toString();
+			String ticketID = "";
+			if (tktID.length() > 30) {
+				ticketID = tktID.substring(0, 30);
+			} else {
+				ticketID = tktID;
+			}
+			pd.setTicketID(ticketID);
+
+			mapLrpcMap.put(req.getUsername() + req.getAccountNumber(), pd);
+
+			atr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			atr.setFinalAmount(bank.getTransactionAmount()); // Change finalAmount to transactionAmount
+			atr.setTotalFees(bank.getTotalFees());
+			atr.setTransactionAmount(bank.getTransactionAmount());
+			atr.setAccountName(bank.getToAccountName());
+			atr.setAccountNumber(bank.getToAccountNumber());
+			atr.setBankName(bank.getBankName());
+			atr.setTicketID(ticketID);
+
+			return atr;
+		} catch (TransactionException ex) {
+			atr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
+			return atr;
+		}
+	}
+
+	@Override
+	public BankAccountTransferResponse bankAccountTransferSettlement(Holder<Header> headerParam,
+			BankAccountTransferRequest req) throws Exception {
+		BankAccountTransferResponse atr = new BankAccountTransferResponse();
+		try {
+			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), req);
+
+			PaymentRequest pr = new PaymentRequest();
+			pr.setAccessTypeID(req.getAccessTypeID());
+			pr.setAmount(req.getAmount());
+			pr.setCredential(req.getCredential());
+			pr.setDescription(req.getDescription());
+			pr.setFromMember(req.getUsername());
+			pr.setToMember(bank.getFromUsername());
+			pr.setTraceNumber(req.getTraceNumber());
+			pr.setTransferTypeID(bank.getTransferTypeID());
+			pr.setReferenceNumber(req.getAccountNumber());
+			pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+
+			/*
+			 * INSERT Pending Transfers
+			 */
+			PaymentDetails pd = paymentValidation.validatePayment(pr, headerParam.value.getToken(), "PENDING");
+
+			Map<String, Object> bankMap = new HashMap<String, Object>();
+			bankMap.put("toAccountNumber", bank.getToAccountNumber());
+			bankMap.put("toAccountName", bank.getToAccountName());
+			bankMap.put("toResidentStatus", bank.getToResidentStatus());
+			bankMap.put("toProfileType", bank.getToProfileType());
+			bankMap.put("toEmailAddress", pd.getFromMember().getEmail());
+			bankMap.put("fromAccountNumber", bank.getFromAccountNumber());
+			bankMap.put("username", req.getUsername());
+			bankMap.put("bankCode", bank.getBankCode());
+			bankMap.put("swiftCode", bank.getSwiftCode());
+			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString()); // Change finalAmount to
+																						// transactionAmount
+			bankMap.put("description", "Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			bankMap.put("remark", req.getDescription());
+
+			if (!bank.getTransferMethod().equalsIgnoreCase("0")
+					&& pd.getFees().getFinalAmount().intValue() > 100000000) {
+				bankMap.put("transferMethod", "1");
+				logger.info("[Transfer Method: 1]");
+			} else {
+				bankMap.put("transferMethod", bank.getTransferMethod());
+				logger.info("[Transfer Method: " + bank.getTransferMethod() + "]");
+			}
+
+			bankMap.put("chargingCode", bank.getChargingCode());
+			bankMap.put("traceNumber", req.getTraceNumber());
+			bankMap.put("transactionNumber", pd.getTransactionNumber());
+			bankMap.put("transferTypeID", bank.getTransferTypeID());
+			bankMap.put("transferID", pd.getTransferID());
+			bankMap.put("token", headerParam.value.getToken());
+			bankMap.put("bankName", bank.getBankName());
+
+			MuleClient client;
+			client = new MuleClient(configurator.getMuleContext());
+			Map<String, Object> header = new HashMap<String, Object>();
+			header.put("TRANSACTION_TYPE", "payment");
+			header.put("GATEWAY_URL", bank.getGatewayURL());
+
+			client.dispatch("InterbankVM", bankMap, header);
+
+			atr.setStatus(StatusBuilder.getStatus(Status.REQUEST_RECEIVED));
+			atr.setFinalAmount(bank.getTransactionAmount());// Change finalAmount to transactionAmount
+			atr.setTotalFees(bank.getTotalFees());
+			atr.setTransactionAmount(bank.getTransactionAmount());
+			atr.setAccountNumber(req.getAccountNumber());
+			atr.setBankName(bank.getBankName());
+			atr.setTransactionNumber(pd.getTransactionNumber());
+			atr.setTraceNumber(req.getTraceNumber());
+			return atr;
+
+		} catch (TransactionException ex) {
+			atr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
+			return atr;
 		}
 	}
 

@@ -65,6 +65,8 @@ public class PaymentServiceImpl implements Payment {
 	private HazelcastInstance instance;
 	@Autowired
 	private Configurator configurator;
+	@Autowired
+	private MemberValidation memberValidation;
 	private Logger logger = Logger.getLogger(PaymentServiceImpl.class);
 
 	@Override
@@ -134,6 +136,156 @@ public class PaymentServiceImpl implements Payment {
 			ir.setStatus(StatusBuilder.getStatus(ex.getMessage()));
 			return ir;
 		}
+	}
+
+	@Override
+	public RequestPaymentConfirmationResponse merchantRequestPayment(Holder<Header> headerParam, PaymentRequest req) {
+		RequestPaymentConfirmationResponse rp = new RequestPaymentConfirmationResponse();
+		IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("MerchantRequestPaymentMap");
+		PaymentDetails pd = null;
+
+		try {
+			pd = paymentValidation.validatePayment(req, headerParam.value.getToken(), "PENDING");
+			String reqID = UUID.randomUUID().toString();
+
+			List<Notifications> ln = new LinkedList<Notifications>();
+
+			Notifications notif = baseRepository.getGroupsRepository()
+					.loadDefaultNotificationByGroupID(pd.getFromMember().getGroupID());
+			notif.setNotificationType("requestPaymentConfirmation");
+
+			ln.add(notif);
+			pd.setNotification(ln);
+			String otp = Utils.GenerateRandomNumber(6);
+			pd.setOtp(otp);
+			rp.setTwoFactorAuthentication(true);
+			MuleClient client;
+			client = new MuleClient(configurator.getMuleContext());
+			Map<String, Object> header = new HashMap<String, Object>();
+			client.dispatch("NotificationVM", pd, header);
+
+			mapLrpcMap.put(otp, pd);
+
+			TransferTypeFields tf = new TransferTypeFields();
+			tf.setFromAccounts(pd.getFromAccount().getId());
+			tf.setId(pd.getTransferType().getId());
+			tf.setName(pd.getTransferType().getName());
+			tf.setToAccounts(pd.getToAccount().getId());
+
+			MemberView fromTransfer = new MemberView();
+			fromTransfer.setId(pd.getFromMember().getId());
+			fromTransfer.setName(pd.getFromMember().getName());
+			fromTransfer.setUsername(pd.getFromMember().getUsername());
+			rp.setFromMember(fromTransfer);
+			MemberView toTransfer = new MemberView();
+			toTransfer.setId(pd.getToMember().getId());
+			toTransfer.setName(pd.getToMember().getName());
+			toTransfer.setUsername(pd.getToMember().getUsername());
+			rp.setToMember(toTransfer);
+			rp.setRequestID(reqID);
+			rp.setFinalAmount(pd.getFees().getFinalAmount());
+			rp.setTotalFees(pd.getFees().getTotalFees());
+			rp.setTransactionAmount(req.getAmount());
+			rp.setTransferType(tf);
+			rp.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			return rp;
+		} catch (TransactionException e) {
+			rp.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return rp;
+		} catch (SocketTimeoutException ex) {
+			rp.setStatus(StatusBuilder.getStatus(Status.REQUEST_TIMEOUT));
+			return rp;
+		} catch (MuleException e) {
+			rp.setStatus(StatusBuilder.getStatus(Status.OTP_FAILED));
+			return rp;
+		}
+
+	}
+
+	@Override
+	@Transactional
+	public PaymentResponse merchantConfirmPayment(Holder<Header> headerParam, ConfirmPaymentRequest req) {
+		IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("MerchantRequestPaymentMap");
+		PaymentDetails pc = mapLrpcMap.get(req.getOtp());
+		PaymentResponse pr = new PaymentResponse();
+
+		/*
+		 * Validate Cache by OTP
+		 */
+		if (pc == null) {
+			pr.setStatus(StatusBuilder.getStatus(Status.OTP_EXPIRED));
+			return pr;
+		} 
+		
+		/*
+		* Validate Amount
+		*/
+		if(req.getAmount().compareTo(pc.getFees().getFinalAmount()) == 1) {
+			pr.setStatus(StatusBuilder.getStatus(Status.INVALID_AMOUNT));
+			return pr;
+		}
+		//cek finalamount - totalamount
+		//kalo minus atau positif
+		
+		/*
+		 * Evict Cache Now
+		 */
+		mapLrpcMap.remove(req.getOtp());
+
+		/*
+		 * Update Transaction to PROCESSED
+		 */
+		baseRepository.getTransferRepository().merchantConfirmPendingTransfers(pc.getTransactionNumber(),
+				pc.getRequest().getTraceNumber(), pc.getWebService().getId(), req.getAmount());
+
+		/*
+		 * Update Fees to PROCESSED (if any)
+		 */
+		if (!pc.getFees().getListTotalFees().isEmpty()) {
+
+			baseRepository.getTransferTypeRepository().updatePendingFees(pc.getTransactionNumber());
+		}
+
+		List<Notifications> ln = baseRepository.getTransferTypeRepository()
+				.loadNotificationByTransferType(pc.getTransferType().getId());
+		try {
+
+			if (ln.size() > 0) {
+				pc.setNotification(ln);
+				MuleClient client;
+				client = new MuleClient(configurator.getMuleContext());
+				Map<String, Object> header = new HashMap<String, Object>();
+				client.dispatch("NotificationVM", pc, header);
+			}
+
+			pr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			pr.setAmount(req.getAmount());
+			pr.setDescription(pc.getRequest().getDescription());
+			MemberView fromTransfer = new MemberView();
+			fromTransfer.setId(pc.getFromMember().getId());
+			fromTransfer.setName(pc.getFromMember().getName());
+			fromTransfer.setUsername(pc.getFromMember().getUsername());
+			pr.setFromMember(fromTransfer);
+			pr.setPaymentFields(pc.getRequest().getPaymentFields());
+			MemberView toTransfer = new MemberView();
+			toTransfer.setId(pc.getToMember().getId());
+			toTransfer.setName(pc.getToMember().getName());
+			toTransfer.setUsername(pc.getToMember().getUsername());
+			TransferTypeFields typeField = new TransferTypeFields();
+			typeField.setFromAccounts(pc.getFromAccount().getId());
+			typeField.setId(pc.getTransferType().getId());
+			typeField.setName(pc.getTransferType().getName());
+			typeField.setToAccounts(pc.getToAccount().getId());
+			pr.setTransferType(typeField);
+			pr.setToMember(toTransfer);
+			pr.setTraceNumber(pc.getRequest().getTraceNumber().substring(1));
+			pr.setTransactionNumber(pc.getTransactionNumber());
+			return pr;
+		} catch (MuleException e) {
+			pr.setStatus(StatusBuilder.getStatus(Status.UNKNOWN_ERROR));
+			return pr;
+		}
+
 	}
 
 	@Override
@@ -303,11 +455,12 @@ public class PaymentServiceImpl implements Payment {
 	public GeneratePaymentTicketResponse generatePaymentTicket(Holder<Header> headerParam,
 			GeneratePaymentTicketRequest req) {
 		GeneratePaymentTicketResponse gtr = new GeneratePaymentTicketResponse();
+		GeneratePaymentTicketRequest gtm = new GeneratePaymentTicketRequest();
 		try {
-			paymentValidation.validatePaymentRequest(headerParam.value.getToken(), req);
+			gtm =  paymentValidation.validatePaymentRequest(headerParam.value.getToken(), req);
 			String ticket = UUID.randomUUID().toString();
 			IMap<String, GeneratePaymentTicketRequest> genMap = instance.getMap("GeneratePaymentMap");
-			genMap.put(ticket, req);
+			genMap.put(ticket, gtm);
 			gtr.setTicket(ticket);
 			gtr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return gtr;
@@ -334,6 +487,9 @@ public class PaymentServiceImpl implements Payment {
 		vtr.setAmount(gtr.getAmount());
 		vtr.setDescription(gtr.getDescription());
 		vtr.setToMember(gtr.getToMember());
+		vtr.setName(gtr.getName());
+		vtr.setEmail(gtr.getEmail());
+		vtr.setInvoiceNumber(gtr.getInvoiceNumber());
 		vtr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 		return vtr;
 	}
@@ -420,6 +576,7 @@ public class PaymentServiceImpl implements Payment {
 		List<Transfers> listMainTransfers = new LinkedList<Transfers>();
 
 		try {
+			Members member = memberValidation.validateMember(req.getUsername(), true);
 			if (req.getTransactionNumber() == null) {
 				listMainTransfers = paymentValidation.validateReversal(req.getTraceNumber(),
 						headerParam.value.getToken());
@@ -432,7 +589,7 @@ public class PaymentServiceImpl implements Payment {
 			}
 
 			Transfers mainTransfers = listMainTransfers.get(0);
-			baseRepository.getTransferRepository().reverseTransaction(mainTransfers.getTransactionNumber());
+			baseRepository.getTransferRepository().reverseTransaction(member.getId(), mainTransfers.getTransactionNumber());
 			rr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return rr;
 

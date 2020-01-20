@@ -7,19 +7,19 @@ public class Transfers {
 
 	private Integer id;
 	private String traceNumber;
-	
+
 	private Integer fromMemberID;
 	private Integer toMemberID;
 	private String fromUsername;
 	private String toUsername;
 	private String fromName;
 	private String toName;
-	
+
 	private Integer transferTypeID;
 	private Integer fromAccountID;
 	private Integer toAccountID;
 	private String name;
-	
+
 	private BigDecimal amount;
 	private String transactionState;
 	private String transactionNumber;
@@ -28,8 +28,13 @@ public class Transfers {
 	private String description;
 	private boolean chargedBack;
 	private Date transactionDate;
+	private String formattedTransactionDate;
 	private Date modifiedDate;
 	private boolean customField;
+
+	private Integer reverseByID;
+	private String reverseByUsername;
+	private String reverseByName;
 
 	public Date getTransactionDate() {
 		return transactionDate;
@@ -205,6 +210,38 @@ public class Transfers {
 
 	public void setReversedTransactionNumber(String reversedTransactionNumber) {
 		this.reversedTransactionNumber = reversedTransactionNumber;
+	}
+
+	public Integer getReverseByID() {
+		return reverseByID;
+	}
+
+	public void setReverseByID(Integer reverseByID) {
+		this.reverseByID = reverseByID;
+	}
+
+	public String getReverseByUsername() {
+		return reverseByUsername;
+	}
+
+	public void setReverseByUsername(String reverseByUsername) {
+		this.reverseByUsername = reverseByUsername;
+	}
+
+	public String getReverseByName() {
+		return reverseByName;
+	}
+
+	public void setReverseByName(String reverseByName) {
+		this.reverseByName = reverseByName;
+	}
+
+	public String getFormattedTransactionDate() {
+		return formattedTransactionDate;
+	}
+
+	public void setFormattedTransactionDate(String formattedTransactionDate) {
+		this.formattedTransactionDate = formattedTransactionDate;
 	}
 
 }

@@ -11,6 +11,7 @@ public class NotificationMessage {
 	private String body;
 	private Boolean read;
 	private Date date;
+	private String formattedDate;
 
 	public Integer getId() {
 		return id;
@@ -66,6 +67,14 @@ public class NotificationMessage {
 
 	public void setFromName(String fromName) {
 		this.fromName = fromName;
+	}
+
+	public String getFormattedDate() {
+		return formattedDate;
+	}
+
+	public void setFormattedDate(String formattedDate) {
+		this.formattedDate = formattedDate;
 	}
 
 }

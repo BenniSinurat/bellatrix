@@ -4,6 +4,7 @@ public class ReversalRequest {
 
 	private String traceNumber;
 	private String transactionNumber;
+	private String username;
 
 	public String getTraceNumber() {
 		return traceNumber;
@@ -19,6 +20,14 @@ public class ReversalRequest {
 
 	public void setTransactionNumber(String transactionNumber) {
 		this.transactionNumber = transactionNumber;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
 	}
 
 }

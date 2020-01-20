@@ -17,12 +17,16 @@ public class Members implements Serializable {
 	private Integer groupID;
 	private String name;
 	private String email;
+	private Boolean emailVerify;
 	private String msisdn;
 	private String idCardNo;
 	private String address;
 	private Date dateOfBirth;
 	private String placeOfBirth;
 	private String motherMaidenName;
+	private String nationality;
+	private String work;
+	private String sex;
 	private Boolean kycStatus;
 	private List<MemberFields> customFields;
 	private List<ExternalMemberFields> externalMembers;
@@ -164,8 +168,40 @@ public class Members implements Serializable {
 		this.motherMaidenName = motherMaidenName;
 	}
 
+	public String getNationality() {
+		return nationality;
+	}
+
+	public void setNationality(String nationality) {
+		this.nationality = nationality;
+	}
+
+	public String getWork() {
+		return work;
+	}
+
+	public void setWork(String work) {
+		this.work = work;
+	}
+
+	public String getSex() {
+		return sex;
+	}
+
+	public void setSex(String sex) {
+		this.sex = sex;
+	}
+
 	public static long getSerialversionuid() {
 		return serialVersionUID;
+	}
+
+	public Boolean getEmailVerify() {
+		return emailVerify;
+	}
+
+	public void setEmailVerify(Boolean emailVerify) {
+		this.emailVerify = emailVerify;
 	}
 
 }

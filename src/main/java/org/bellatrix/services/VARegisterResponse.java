@@ -14,6 +14,7 @@ public class VARegisterResponse {
 	private Date expiredAt;
 	private ResponseStatus status;
 	private String ticketID;
+	private String description;
 
 	public String getBankName() {
 		return bankName;
@@ -77,6 +78,14 @@ public class VARegisterResponse {
 
 	public void setTicketID(String ticketID) {
 		this.ticketID = ticketID;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 }

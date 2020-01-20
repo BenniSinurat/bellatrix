@@ -3,19 +3,19 @@ package org.bellatrix.services;
 import java.util.List;
 
 import org.bellatrix.data.ResponseStatus;
-import org.bellatrix.data.VARecordView;
+import org.bellatrix.data.VAStatusRecordView;
 
 public class LoadVAStatusByMemberResponse {
 
-	private List<VARecordView> vaRecord;
+	private List<VAStatusRecordView> vaRecord;
 	private ResponseStatus status;
 	private Integer totalRecords;
 
-	public List<VARecordView> getVaRecord() {
+	public List<VAStatusRecordView> getVaRecord() {
 		return vaRecord;
 	}
 
-	public void setVaRecord(List<VARecordView> vaRecord) {
+	public void setVaRecord(List<VAStatusRecordView> vaRecord) {
 		this.vaRecord = vaRecord;
 	}
 

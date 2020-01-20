@@ -64,4 +64,42 @@ public interface Member {
 	public LoadKYCResponse loadKYCRequest(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadKYCRequest req) throws Exception;
 
+	@WebMethod(action = "validateKYCRequest")
+	public ValidateKYCResponse validateKYCRequest(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam, @WebParam ValidateKYCRequest req)
+			throws Exception;
+
+	@WebMethod(action = "registerMerchants")
+	public void registerMerchants(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam RegisterMerchantRequest req) throws Exception;
+
+	@WebMethod(action = "loadMerchantByUsername")
+	public LoadMerchantByUsernameResponse loadMerchantsByUsername(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadMerchantByUsernameRequest req);
+
+	@WebMethod(action = "updateMerchants")
+	public void updateMerchants(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam UpdateMerchantRequest req) throws Exception;
+
+	@WebMethod(action = "loadMerchantRequest")
+	public LoadMerchantResponse loadMerchantRequest(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadMerchantRequest req) throws Exception;
+
+	@WebMethod(action = "confirmMerchantRequest")
+	public ConfirmMerchantResponse confirmMerchantRequest(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam, @WebParam ConfirmMerchantRequest req)
+			throws Exception;
+	
+	@WebMethod(action = "loadMerchantCategory")
+	public LoadMerchantCategoryResponse loadMerchantCategory(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadMerchantCategoryRequest req) throws Exception;
+	
+	@WebMethod(action = "loadMerchantSubCategory")
+	public LoadMerchantSubCategoryResponse loadMerchantSubCategory(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadMerchantSubCategoryRequest req) throws Exception;
+	
+	@WebMethod(action = "loadMerchantBusinessScale")
+	public LoadMerchantBusinessScaleResponse loadMerchantBusinessScale(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadMerchantBusinessScaleRequest req) throws Exception;
 }

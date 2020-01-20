@@ -591,7 +591,7 @@ public class PaymentValidation {
 		}
 	}
 
-	public void validatePaymentRequest(String token, GeneratePaymentTicketRequest req)
+	public GeneratePaymentTicketRequest validatePaymentRequest(String token, GeneratePaymentTicketRequest req)
 			throws TransactionException, SocketTimeoutException {
 		/*
 		 * Validate Webservice Access
@@ -620,7 +620,16 @@ public class PaymentValidation {
 		 * Validate ToAccount
 		 */
 		accountValidation.validateAccount(transferType, toMember, false);
-
+		
+		GeneratePaymentTicketRequest gtm = new GeneratePaymentTicketRequest();
+		gtm.setAmount(req.getAmount());
+		gtm.setDescription(req.getDescription());
+		gtm.setInvoiceNumber(req.getInvoiceNumber());
+		gtm.setTransferTypeID(req.getTransferTypeID());
+		gtm.setToMember(req.getToMember());
+		gtm.setName(req.getName());
+		gtm.setEmail(req.getEmail());
+		return gtm;
 	}
 
 	public List<Transfers> validateReversal(String traceNumber, String token)

@@ -11,6 +11,7 @@ public class UpdateMemberRequest {
 	private Integer groupID;
 	private String name;
 	private String email;
+	private Boolean emailVerify;
 	private String msisdn;
 	private String idCardNo;
 	private String address;
@@ -45,6 +46,14 @@ public class UpdateMemberRequest {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public Boolean getEmailVerify() {
+		return emailVerify;
+	}
+
+	public void setEmailVerify(Boolean emailVerify) {
+		this.emailVerify = emailVerify;
 	}
 
 	public String getMsisdn() {
@@ -142,5 +151,4 @@ public class UpdateMemberRequest {
 	public void setNationality(String nationality) {
 		this.nationality = nationality;
 	}
-
 }

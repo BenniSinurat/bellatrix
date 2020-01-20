@@ -21,6 +21,7 @@ public class VAPaymentResponse {
 	private String bankCode;
 	private String bankName;
 	private Date transactionDate;
+	private String description;
 
 	public ResponseStatus getStatus() {
 		return status;
@@ -132,6 +133,14 @@ public class VAPaymentResponse {
 
 	public void setTransactionDate(Date transactionDate) {
 		this.transactionDate = transactionDate;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
 	}
 
 }

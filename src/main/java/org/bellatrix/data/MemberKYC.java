@@ -6,17 +6,24 @@ public class MemberKYC {
 
 	private Integer id;
 	private Members fromMember;
+	private Members validatedMember;
 	private Members approvedMember;
 	private String imagePath1;
 	private String imagePath2;
 	private String imagePath3;
 	private Groups group;
 	private String status;
+	private Boolean validated;
 	private Boolean approved;
 	private String description;
+	private String validateDescription;
 	private Date requestedDate;
+	private Date approvalRequestDate;
+	private Date validateDate;
 	private Date approvalDate;
 	private String formattedRequestedDate;
+	private String formattedApprovalRequestedDate;
+	private String formattedValidateDate;
 	private String formattedApprovalDate;
 
 	public Members getFromMember() {
@@ -129,6 +136,62 @@ public class MemberKYC {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public Members getValidatedMember() {
+		return validatedMember;
+	}
+
+	public void setValidatedMember(Members validatedMember) {
+		this.validatedMember = validatedMember;
+	}
+
+	public Boolean getValidated() {
+		return validated;
+	}
+
+	public void setValidated(Boolean validated) {
+		this.validated = validated;
+	}
+
+	public Date getApprovalRequestDate() {
+		return approvalRequestDate;
+	}
+
+	public void setApprovalRequestDate(Date approvalRequestDate) {
+		this.approvalRequestDate = approvalRequestDate;
+	}
+
+	public Date getValidateDate() {
+		return validateDate;
+	}
+
+	public void setValidateDate(Date validateDate) {
+		this.validateDate = validateDate;
+	}
+
+	public String getFormattedApprovalRequestedDate() {
+		return formattedApprovalRequestedDate;
+	}
+
+	public void setFormattedApprovalRequestedDate(String formattedApprovalRequestedDate) {
+		this.formattedApprovalRequestedDate = formattedApprovalRequestedDate;
+	}
+
+	public String getFormattedValidateDate() {
+		return formattedValidateDate;
+	}
+
+	public void setFormattedValidateDate(String formattedValidateDate) {
+		this.formattedValidateDate = formattedValidateDate;
+	}
+
+	public String getValidateDescription() {
+		return validateDescription;
+	}
+
+	public void setValidateDescription(String validateDescription) {
+		this.validateDescription = validateDescription;
 	}
 
 }

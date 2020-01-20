@@ -8,13 +8,17 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 import org.bellatrix.data.Accounts;
 import org.bellatrix.data.Fees;
 import org.bellatrix.data.Members;
+import org.bellatrix.data.PaymentFields;
 import org.bellatrix.data.TransferTypes;
 import org.bellatrix.data.Transfers;
 import org.bellatrix.services.PaymentRequest;
@@ -24,6 +28,7 @@ import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
@@ -74,9 +79,11 @@ public class TransferRepository {
 		final PaymentRequest req = paymentReq;
 
 		boolean useCustomField = req.getPaymentFields() != null ? true : false;
-		logger.info("TRX DATE TIME: "+req.getTransactionDate());
-		LocalDateTime trxDate = paymentReq.getTransactionDate() != null ? LocalDateTime.ofInstant(paymentReq.getTransactionDate().toInstant(), ZoneId.systemDefault()) : LocalDateTime.now();
-		logger.info("TRX DATE TIME I: "+trxDate);
+		logger.info("TRX DATE TIME: " + req.getTransactionDate());
+		LocalDateTime trxDate = paymentReq.getTransactionDate() != null
+				? LocalDateTime.ofInstant(paymentReq.getTransactionDate().toInstant(), ZoneId.systemDefault())
+				: LocalDateTime.now();
+		logger.info("TRX DATE TIME I: " + trxDate);
 		GeneratedKeyHolder holder = new GeneratedKeyHolder();
 		jdbcTemplate.update(new PreparedStatementCreator() {
 
@@ -212,10 +219,27 @@ public class TransferRepository {
 				});
 	}
 
-	public void reverseTransaction(String trxNo) {
+	public List<PaymentFields> loadMultiPaymentFieldValuesByTransferID(List<Integer> req) {
+		String sql = "select * from payment_custom_field_values where transfer_id in (:transferID)";
+		Map<String, List<Integer>> paramMap = Collections.singletonMap("transferID", req);
+		NamedParameterJdbcTemplate template = new NamedParameterJdbcTemplate(this.jdbcTemplate.getDataSource());
+		List<PaymentFields> paymentfield = template.query(sql, paramMap, new RowMapper<PaymentFields>() {
+			public PaymentFields mapRow(ResultSet rs, int rowNum) throws SQLException {
+				PaymentFields paymentfield = new PaymentFields();
+				paymentfield.setId(rs.getInt("id"));
+				paymentfield.setTransferID(rs.getInt("transfer_id"));
+				paymentfield.setPaymentCustomFieldID(rs.getInt("payment_custom_field_id"));
+				paymentfield.setValue(rs.getString("value"));
+				return paymentfield;
+			}
+		});
+		return paymentfield;
+	}
+
+	public void reverseTransaction(Integer memberID, String trxNo) {
 		this.jdbcTemplate.update(
-				"update transfers set charged_back = true, transaction_state = 'REVERSED' where transaction_number = ? or parent_id = ?",
-				new Object[] { trxNo, trxNo });
+				"update transfers set charged_back = true, transaction_state = 'REVERSED', reverse_by = ? where transaction_number = ? or parent_id = ?",
+				new Object[] { memberID, trxNo, trxNo });
 
 	}
 
@@ -242,6 +266,13 @@ public class TransferRepository {
 		this.jdbcTemplate.update(
 				"update  transfers set transaction_state = 'PROCESSED' where transaction_number = ? and trace_number = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber, trNo });
+	}
+	
+	public void merchantConfirmPendingTransfers(String transactionNumber, String traceNumber, Integer wsID, BigDecimal amount) {
+		String trNo = String.valueOf(wsID) + traceNumber;
+		this.jdbcTemplate.update(
+				"update  transfers set transaction_state = 'PROCESSED', amount = ? where transaction_number = ? and trace_number = ? and transaction_state = 'PENDING'",
+				new Object[] { amount, transactionNumber, trNo });
 	}
 
 	public void confirmPendingTransfers(Integer id, String refNo) {

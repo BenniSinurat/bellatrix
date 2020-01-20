@@ -52,6 +52,7 @@ http://www.mulesoft.org/schema/mule/udp http://www.mulesoft.org/schema/mule/udp/
 		doc:name="VM" />
 	<vm:endpoint exchange-pattern="request-response" path="notification"
 		connector-ref="Notification_VM" name="NotificationVM" doc:name="VM" />
+	
 	<vm:endpoint exchange-pattern="request-response" path="kyc.notification.process"
 		connector-ref="Notification_VM" name="KYCNotificationVM" doc:name="VM" />
 	<vm:endpoint exchange-pattern="request-response"

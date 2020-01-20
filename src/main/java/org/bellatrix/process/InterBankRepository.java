@@ -9,9 +9,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.bellatrix.data.AccountTransfer;
-import org.bellatrix.data.AccountTransferRequest;
 import org.bellatrix.data.BankTransfers;
-import org.bellatrix.data.Members;
 import org.bellatrix.data.Status;
 import org.bellatrix.services.RegisterAccountTransferRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -182,6 +180,11 @@ public class InterBankRepository {
 		if (affected == 0) {
 			throw new Exception(String.valueOf(Status.ACCOUNT_NOT_FOUND));
 		}
+	}
+	
+	public Integer countTotalbankAccounts(Integer memberID) {
+		int count = this.jdbcTemplate.queryForObject("select  count(id) from bank_account where member_id = ?", Integer.class, memberID);
+		return count;
 	}
 
 	@Autowired

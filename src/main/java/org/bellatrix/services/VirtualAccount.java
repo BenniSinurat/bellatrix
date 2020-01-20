@@ -6,6 +6,8 @@ import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.xml.ws.Holder;
 import org.bellatrix.data.Header;
+import org.bellatrix.data.ReportBillingRequest;
+import org.bellatrix.data.ReportBillingResponse;
 
 @SOAPBinding(style = SOAPBinding.Style.DOCUMENT, use = SOAPBinding.Use.LITERAL, parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @WebService
@@ -77,4 +79,8 @@ public interface VirtualAccount {
 	@WebMethod(action = "listBankVA")
 	public VABankResponse listBankVA(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam VABankRequest req);
+
+	@WebMethod(action = "reportBilling")
+	public ReportBillingResponse reportBilling(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam ReportBillingRequest req) throws Exception;
 }

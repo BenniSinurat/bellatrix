@@ -35,6 +35,7 @@ public class PaymentDetails implements Serializable {
 	private List<Notifications> notification;
 	private HashMap<String, Object> privateField;
 	private Terminal terminal;
+	private String ticketID;
 
 	public Members getFromMember() {
 		return fromMember;
@@ -162,6 +163,14 @@ public class PaymentDetails implements Serializable {
 
 	public void setTerminal(Terminal terminal) {
 		this.terminal = terminal;
+	}
+
+	public String getTicketID() {
+		return ticketID;
+	}
+
+	public void setTicketID(String ticketID) {
+		this.ticketID = ticketID;
 	}
 
 }
