@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 public class VAEvent {
-
+	private String eventID;
 	private String eventName;
 	private String description;
 	private BigDecimal amount;
@@ -13,6 +13,14 @@ public class VAEvent {
 	private String ticketID;
 	private Date expiredAt;
 	private String formattedExpiredAt;
+
+	public String getEventID() {
+		return eventID;
+	}
+
+	public void setEventID(String eventID) {
+		this.eventID = eventID;
+	}
 
 	public String getEventName() {
 		return eventName;

@@ -110,6 +110,6 @@ http://www.hazelcast.com/schema/spring classpath:hazelcast.xsd">
 	<bean id="feeCacheImpl" class="org.bellatrix.process.FeeCacheImpl" />
 	<bean id="accountCacheImpl" class="org.bellatrix.process.AccountCacheImpl" />
 	<bean id="trxTypeCacheImpl" class="org.bellatrix.process.TransferTypeCacheImpl" />
-	<bean id="registerVAListener" class="org.bellatrix.process.RegisterVAListener" />
+	<bean id="RegisterVAListener" class="org.bellatrix.process.RegisterVAListener" />
 
 </beans>

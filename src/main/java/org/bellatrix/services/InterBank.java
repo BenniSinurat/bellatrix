@@ -66,9 +66,9 @@ public interface InterBank {
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam SettlementTransferRequest req) throws Exception;
 	
-	@WebMethod(action = "settlementTransferSettlement")
-	public BankAccountTransferResponse bankAccountTransferSettlement(
+	@WebMethod(action = "settlementTransferPayment")
+	public SettlementTransferResponse settlementTransferPayment(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam BankAccountTransferRequest req) throws Exception;
+			@WebParam SettlementTransferRequest req) throws Exception;
 
 }

@@ -15,9 +15,11 @@ import org.apache.log4j.Logger;
 import org.bellatrix.data.BillingStatus;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.RegisterVADoc;
+import org.bellatrix.data.VAEvent;
 import org.bellatrix.data.VARecordView;
 import org.bellatrix.data.VAStatusRecordView;
 import org.bellatrix.data.VirtualAccounts;
+import org.bellatrix.services.LoadBillingStatusByMemberRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -157,11 +159,12 @@ public class VirtualAccountRepository {
 		this.jdbcTemplate.update(
 				"insert into billing_va (event_id, va_no, name, msisdn, reference_no, email, description, billing_state, member_id, amount, minimum_payment, expired_date, fullpayment, persistent, bank_id, callback_url, ticket_id) values (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, ?, ?, ?, ?, ?, ?);",
 				eventID, rva.getId(), rva.getName(), rva.getMsisdn(), rva.getReferenceNumber(), rva.getEmail(),
-				rva.getDescription(), rva.getMember().getId(), rva.getAmount(), rva.getMinimumPayment(), rva.getExpiredAt(), rva.isFullPayment(),
-				rva.isPersistent(), rva.getBankID(), rva.getCallbackURL(), rva.getTicketID());
+				rva.getDescription(), rva.getMember().getId(), rva.getAmount(), rva.getMinimumPayment(),
+				rva.getExpiredAt(), rva.isFullPayment(), rva.isPersistent(), rva.getBankID(), rva.getCallbackURL(),
+				rva.getTicketID());
 	}
 
-	public List<VAStatusRecordView> loadVAByStatus(String username, Integer memberID, String startDate, String endDate,
+	public List<VAStatusRecordView> loadVAByMemberStatus(String username, Integer memberID, String startDate, String endDate,
 			Integer currentPage, Integer pageSize) {
 		try {
 			List<VAStatusRecordView> va = this.jdbcTemplate.query(
@@ -194,12 +197,44 @@ public class VirtualAccountRepository {
 		}
 	}
 	
+	public List<VAStatusRecordView> loadVAByStatus(String username, Integer memberID, String startDate, String endDate,
+			Integer currentPage, Integer pageSize) {
+		try {
+			List<VAStatusRecordView> va = this.jdbcTemplate.query(
+					"select bv.id, bv.event_id, bv.va_no, bv.name, bv.reference_no, bv.email, bv.billing_state, bv.amount, bv.expired_date, bv.fullpayment, bv.persistent, bv.bank_id, bv.description, bv.created_date, bb.bank_code, bb.name as bank_name from billing_va bv join bank_va bb on bb.id=bv.bank_id where bv.member_id=? and billing_state='ACTIVE' and bv.created_date between ? and ? order by bv.created_date desc;",
+					new Object[] { memberID, startDate, endDate },
+					new RowMapper<VAStatusRecordView>() {
+						public VAStatusRecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
+							VAStatusRecordView vav = new VAStatusRecordView();
+							vav.setId(rs.getString("id"));
+							vav.setName(rs.getString("name"));
+							vav.setReferenceNumber(rs.getString("reference_no"));
+							vav.setPaymentCode(rs.getString("va_no"));
+							vav.setStatus(rs.getString("billing_state"));
+							vav.setAmount(rs.getBigDecimal("amount"));
+							vav.setExpiredAt(rs.getTimestamp("expired_date"));
+							vav.setFullPayment(rs.getBoolean("fullpayment"));
+							vav.setPersistent(rs.getBoolean("persistent"));
+							vav.setDescription(rs.getString("description"));
+							vav.setCreatedDate(rs.getDate("created_date"));
+							vav.setBankID(rs.getInt("bank_id"));
+							vav.setBankCode(rs.getString("bank_code"));
+							vav.setBankName(rs.getString("bank_name"));
+							vav.setParentUsername(username);
+							return vav;
+						}
+					});
+			return va;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
 	public List<VAStatusRecordView> loadVAReport(String username, Integer memberID) {
 		try {
 			List<VAStatusRecordView> va = this.jdbcTemplate.query(
 					"select bv.id, bv.event_id, bv.va_no, bv.name, bv.reference_no, bv.email, bv.billing_state, bv.amount, bv.expired_date, bv.fullpayment, bv.persistent, bv.bank_id, bv.description, bv.created_date, bb.bank_code, bb.name as bank_name from billing_va bv join bank_va bb on bb.id=bv.bank_id where bv.member_id=? and billing_state='ACTIVE' and bv.created_date order by bv.created_date desc;",
-					new Object[] { memberID },
-					new RowMapper<VAStatusRecordView>() {
+					new Object[] { memberID }, new RowMapper<VAStatusRecordView>() {
 						public VAStatusRecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
 							VAStatusRecordView vav = new VAStatusRecordView();
 							vav.setId(rs.getString("id"));
@@ -309,7 +344,85 @@ public class VirtualAccountRepository {
 			return null;
 		}
 	}
-	
+
+	public List<VARecordView> loadVAByEvent(String username, String eventID, Integer currentPage, Integer pageSize) {
+		try {
+			List<VARecordView> vrv = this.jdbcTemplate.query(
+					"select ev.name as event_name, ev.ticket_id, bv.id, bv.va_no, bv.name, bv.reference_no, bv.email, bv.billing_state, bv.amount, bv.expired_date, bv.fullpayment, bv.persistent, bv.callback_url, bv.bank_id, bv.minimum_payment, bv.description, bv.created_date, bb.bank_code, bb.name as bank_name from billing_va bv join bank_va bb on bb.id=bv.bank_id join event_va ev on ev.ticket_id=bv.event_id where billing_state='ACTIVE' AND bv.event_id = ? order by bv.event_id desc limit ?,?;",
+					new Object[] { eventID, currentPage, pageSize }, new RowMapper<VARecordView>() {
+						public VARecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
+							VARecordView vav = new VARecordView();
+							vav.setId(rs.getString("id"));
+							vav.setName(rs.getString("name"));
+							vav.setReferenceNumber(rs.getString("reference_no"));
+							vav.setPaymentCode(rs.getString("va_no"));
+							vav.setStatus(rs.getString("billing_state"));
+							vav.setAmount(rs.getBigDecimal("amount"));
+							vav.setMinimumPayment(rs.getBigDecimal("minimum_payment"));
+							vav.setExpiredAt(rs.getTimestamp("expired_date"));
+							vav.setFullPayment(rs.getBoolean("fullpayment"));
+							vav.setPersistent(rs.getBoolean("persistent"));
+							vav.setCallbackURL(rs.getString("callback_url"));
+							vav.setDescription(rs.getString("description"));
+							vav.setCreatedDate(rs.getDate("created_date"));
+							vav.setBankID(rs.getInt("bank_id"));
+							vav.setBankCode(rs.getString("bank_code"));
+							vav.setBankName(rs.getString("bank_name"));
+
+							VAEvent vae = new VAEvent();
+							vae.setEventName(rs.getString("event_name"));
+							vae.setTicketID(rs.getString("ticket_id"));
+
+							vav.setParentUsername(username);
+							vav.setVaEvent(vae);
+							return vav;
+						}
+					});
+			return vrv;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public List<VARecordView> loadVAByEventID(String username, String eventID) {
+		try {
+			List<VARecordView> vrv = this.jdbcTemplate.query(
+					"select ev.name as event_name, ev.ticket_id, bv.id, bv.va_no, bv.name, bv.reference_no, bv.email, bv.billing_state, bv.amount, bv.expired_date, bv.fullpayment, bv.persistent, bv.callback_url, bv.bank_id, bv.minimum_payment, bv.description, bv.created_date, bb.bank_code, bb.name as bank_name from billing_va bv join bank_va bb on bb.id=bv.bank_id join event_va ev on ev.ticket_id=bv.event_id where billing_state='ACTIVE' AND bv.event_id = ? order by bv.event_id desc;",
+					new Object[] { eventID }, new RowMapper<VARecordView>() {
+						public VARecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
+							VARecordView vav = new VARecordView();
+							vav.setId(rs.getString("id"));
+							vav.setName(rs.getString("name"));
+							vav.setReferenceNumber(rs.getString("reference_no"));
+							vav.setPaymentCode(rs.getString("va_no"));
+							vav.setStatus(rs.getString("billing_state"));
+							vav.setAmount(rs.getBigDecimal("amount"));
+							vav.setMinimumPayment(rs.getBigDecimal("minimum_payment"));
+							vav.setExpiredAt(rs.getTimestamp("expired_date"));
+							vav.setFullPayment(rs.getBoolean("fullpayment"));
+							vav.setPersistent(rs.getBoolean("persistent"));
+							vav.setCallbackURL(rs.getString("callback_url"));
+							vav.setDescription(rs.getString("description"));
+							vav.setCreatedDate(rs.getDate("created_date"));
+							vav.setBankID(rs.getInt("bank_id"));
+							vav.setBankCode(rs.getString("bank_code"));
+							vav.setBankName(rs.getString("bank_name"));
+
+							VAEvent vae = new VAEvent();
+							vae.setEventName(rs.getString("event_name"));
+							vae.setTicketID(rs.getString("ticket_id"));
+
+							vav.setParentUsername(username);
+							vav.setVaEvent(vae);
+							return vav;
+						}
+					});
+			return vrv;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
 	public List<VARecordView> loadVAByMemberID(Members member) {
 		try {
 			List<VARecordView> vrv = this.jdbcTemplate.query(
@@ -343,6 +456,92 @@ public class VirtualAccountRepository {
 		}
 	}
 
+	/**public List<VARecordView> loadVAPaid(LoadBillingStatusByMemberRequest req, Members member) {
+		try {
+			List<VARecordView> paidVA = this.jdbcTemplate.query(
+					"SELECT t.id, bv.ticket_id, bv.va_no, bv.name, t.reference_number, t.transaction_number, t.transaction_date, t.transaction_state FROM transfers t\n"
+							+ "JOIN billing_va bv ON bv.id = t.billing_id WHERE t.to_member_id = ? AND t.billing_id IS NOT NULL AND t.transaction_date BETWEEN ? AND ? ORDER BY t.transaction_date LIMIT ?,?;",
+					new Object[] { member.getId(), req.getFromDate(), req.getToDate(), req.getCurrentPage(),
+							req.getPageSize() },
+					new RowMapper<VARecordView>() {
+						public VARecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
+							VARecordView vav = new VARecordView();
+							vav.setTicketID(rs.getString("ticket_id"));
+							vav.setTransactionDate(rs.getDate("transaction_date"));
+							vav.setStatus(rs.getString("transaction_state"));
+							vav.setId(rs.getString("id"));
+							vav.setName(rs.getString("name"));
+							vav.setReferenceNumber(rs.getString("reference_no"));
+							vav.setPaymentCode(rs.getString("va_no"));
+							vav.setStatus(rs.getString("billing_state"));
+							vav.setAmount(rs.getBigDecimal("amount"));
+							vav.setMinimumPayment(rs.getBigDecimal("minimum_payment"));
+							vav.setExpiredAt(rs.getTimestamp("expired_date"));
+							vav.setFullPayment(rs.getBoolean("fullpayment"));
+							vav.setPersistent(rs.getBoolean("persistent"));
+							vav.setCallbackURL(rs.getString("callback_url"));
+							vav.setDescription(rs.getString("description"));
+							vav.setCreatedDate(rs.getDate("created_date"));
+							vav.setBankID(rs.getInt("bank_id"));
+							vav.setBankCode(rs.getString("bank_code"));
+							vav.setBankName(rs.getString("bank_name"));
+							vav.setParentUsername(member.getUsername());
+							return vav;
+						}
+					});
+			return paidVA;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}**/
+	
+	/**public List<VARecordView> loadVAUnPaid(LoadBillingStatusByMemberRequest req, Members member) {
+		try {
+			List<VARecordView> vrv = this.jdbcTemplate.query(
+					"select bv.id, bv.va_no, bv.name, bv.reference_no, bv.email, bv.billing_state, bv.amount, bv.expired_date, bv.fullpayment, bv.persistent, bv.callback_url, bv.bank_id, bv.minimum_payment, bv.description, bv.created_date, bb.bank_code, bb.name as bank_name from billing_va bv join bank_va bb on bb.id=bv.bank_id where bv.member_id=? and billing_state='ACTIVE' order by bv.id desc limit ?,?;",
+					new Object[] { member.getId(), req.getCurrentPage(), req.getPageSize() }, new RowMapper<VARecordView>() {
+						public VARecordView mapRow(ResultSet rs, int rowNum) throws SQLException {
+							VARecordView vav = new VARecordView();
+							vav.setId(rs.getString("id"));
+							vav.setName(rs.getString("name"));
+							vav.setReferenceNumber(rs.getString("reference_no"));
+							vav.setPaymentCode(rs.getString("va_no"));
+							vav.setStatus(rs.getString("billing_state"));
+							vav.setAmount(rs.getBigDecimal("amount"));
+							vav.setMinimumPayment(rs.getBigDecimal("minimum_payment"));
+							vav.setExpiredAt(rs.getTimestamp("expired_date"));
+							vav.setFullPayment(rs.getBoolean("fullpayment"));
+							vav.setPersistent(rs.getBoolean("persistent"));
+							vav.setCallbackURL(rs.getString("callback_url"));
+							vav.setDescription(rs.getString("description"));
+							vav.setCreatedDate(rs.getDate("created_date"));
+							vav.setBankID(rs.getInt("bank_id"));
+							vav.setBankCode(rs.getString("bank_code"));
+							vav.setBankName(rs.getString("bank_name"));
+							vav.setParentUsername(member.getUsername());
+							return vav;
+						}
+					});
+			return vrv;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}**/
+
+	public Integer countVAPaid(Integer memberID, String fromDate, String toDate) {
+		int count = this.jdbcTemplate.queryForObject(
+				"SELECT count(billing_id) FROM transfers JOIN billing_va bv ON bv.id = t.billing_id WHERE t.to_member_id = ? AND t.billing_id IS NOT NULL AND t.transaction_date BETWEEN ? AND ?",
+				Integer.class, memberID, fromDate, toDate);
+		return count;
+	}
+	
+	public Integer countVAUnPaid(Integer memberID) {
+		int count = this.jdbcTemplate.queryForObject(
+				"select count(bv.id) from billing_va bv where bv.member_id=? and billing_state='ACTIVE' order by bv.id desc;",
+				Integer.class, memberID);
+		return count;
+	}
+
 	public void deleteVA(String paymentCode) {
 		this.jdbcTemplate.update("update billing_va set billing_state='DELETED' where va_no=?", paymentCode);
 	}
@@ -358,7 +557,7 @@ public class VirtualAccountRepository {
 				"update transfers set transaction_state='PROCESSED' where transaction_state='PENDING' and (transaction_number=? or parent_id=?)",
 				transactionNumber, transactionNumber);
 	}
-	
+
 	public void updateStatusBilling(String paymentCode) {
 		this.jdbcTemplate.update(
 				"update billing_va set billing_state='EXPIRED' where va_no = ? and billing_state='ACTIVE'",

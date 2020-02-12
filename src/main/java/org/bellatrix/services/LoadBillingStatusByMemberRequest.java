@@ -1,13 +1,12 @@
 package org.bellatrix.services;
 
-public class LoadVAStatusByMemberRequest {
+public class LoadBillingStatusByMemberRequest {
 
 	private String username;
 	private Integer currentPage;
 	private Integer pageSize;
 	private String fromDate;
 	private String toDate;
-	private String billingStatus;
 
 	public String getUsername() {
 		return username;
@@ -47,14 +46,6 @@ public class LoadVAStatusByMemberRequest {
 
 	public void setToDate(String toDate) {
 		this.toDate = toDate;
-	}
-
-	public String getBillingStatus() {
-		return billingStatus;
-	}
-
-	public void setBillingStatus(String billingStatus) {
-		this.billingStatus = billingStatus;
 	}
 
 }

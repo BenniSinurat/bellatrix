@@ -83,4 +83,18 @@ public interface VirtualAccount {
 	@WebMethod(action = "reportBilling")
 	public ReportBillingResponse reportBilling(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam ReportBillingRequest req) throws Exception;
+
+	@WebMethod(action = "loadVAByEvent")
+	public LoadVAByEventResponse loadVAByEvent(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadVAByEventRequest req);
+
+	/**@WebMethod(action = "loadBillingStatusByMember")
+	public LoadBillingStatusByMemberResponse loadBillingStatusByMember(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadBillingStatusByMemberRequest req);**/
+
+	@WebMethod(action = "loadVAMemberByStatus")
+	public LoadVAStatusByMemberResponse loadVAMemberByStatus(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadVAStatusByMemberRequest req);
 }

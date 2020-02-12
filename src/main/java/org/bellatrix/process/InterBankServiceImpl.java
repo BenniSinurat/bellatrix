@@ -552,6 +552,7 @@ public class InterBankServiceImpl implements InterBank {
 			bAccTrf.setAmount(req.getAmount());
 			bAccTrf.setTraceNumber(req.getTraceNumber());
 			bAccTrf.setUsername(req.getUsername());
+			bAccTrf.setDescription(req.getDescription());
 			
 			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
 			PaymentDetails pd = new PaymentDetails();
@@ -585,16 +586,46 @@ public class InterBankServiceImpl implements InterBank {
 	}
 
 	@Override
-	public BankAccountTransferResponse bankAccountTransferSettlement(Holder<Header> headerParam,
-			BankAccountTransferRequest req) throws Exception {
-		BankAccountTransferResponse atr = new BankAccountTransferResponse();
+	public SettlementTransferResponse settlementTransferPayment(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
+		SettlementTransferResponse atr = new SettlementTransferResponse();
+		IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
+		PaymentDetails pc = mapLrpcMap.get(req.getUsername() + req.getAccountNumber());
+		
 		try {
-			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), req);
+			if (pc == null) {
+				atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+				return atr;
+			}
+
+			if (pc.isTwoFactorAuthentication()) {
+				if (req.getTicketID() != null) {
+					if (!req.getTicketID().equalsIgnoreCase(pc.getTicketID())) {
+						mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
+						atr.setStatus(StatusBuilder.getStatus(Status.OTP_VALIDATION_FAILED));
+						return atr;
+					}
+				} else {
+					mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
+					atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+					return atr;
+				}
+			}
+
+			mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
+			
+			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
+			bAccTrf.setAccountName(req.getAccountName());
+			bAccTrf.setAccountNumber(req.getAccountNumber());
+			bAccTrf.setAmount(req.getAmount());
+			bAccTrf.setTraceNumber(req.getTraceNumber());
+			bAccTrf.setUsername(req.getUsername());
+			bAccTrf.setDescription(req.getDescription());
+			
+			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
 
 			PaymentRequest pr = new PaymentRequest();
-			pr.setAccessTypeID(req.getAccessTypeID());
 			pr.setAmount(req.getAmount());
-			pr.setCredential(req.getCredential());
 			pr.setDescription(req.getDescription());
 			pr.setFromMember(req.getUsername());
 			pr.setToMember(bank.getFromUsername());

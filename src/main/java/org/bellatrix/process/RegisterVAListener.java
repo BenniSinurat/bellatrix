@@ -22,7 +22,9 @@ public class RegisterVAListener implements EntryListener<String, RegisterVADoc>,
 
 	@Override
 	public void entryAdded(EntryEvent<String, RegisterVADoc> event) {
-		// TODO Auto-generated method stub
+		logger.info("[Create Request Billing VA Payment Code : " + event.getKey() + "]");
+		baseRepository.getPersistenceRepository().create(event.getOldValue());
+		baseRepository.getVirtualAccountRepository().registerBillingVA(event.getOldValue().getEvent().getEventID(), event.getOldValue());
 	}
 
 	@Override
@@ -32,7 +34,11 @@ public class RegisterVAListener implements EntryListener<String, RegisterVADoc>,
 
 	@Override
 	public void entryRemoved(EntryEvent<String, RegisterVADoc> event) {
-		// TODO Auto-generated method stub
+		logger.info("[Delete Request Billing VA Payment Code : " + event.getKey() + "]");
+		baseRepository.getPersistenceRepository().delete(new Query(Criteria.where("_id").is(event.getKey())),
+				RegisterVADoc.class);
+		logger.info("[Update Status Deleted Request Billing VA Payment Code : " + event.getKey() + "]");
+		baseRepository.getVirtualAccountRepository().deleteVA(event.getKey());
 	}
 
 	@Override

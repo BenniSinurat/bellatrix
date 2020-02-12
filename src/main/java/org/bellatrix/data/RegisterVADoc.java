@@ -1,5 +1,6 @@
 package org.bellatrix.data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,8 +10,12 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "RegisterVA")
-public class RegisterVADoc {
+public class RegisterVADoc implements Serializable {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 3145823375793366111L;
 	@Id
 	private String id;
 	@Indexed(expireAfterSeconds = 0)
@@ -36,6 +41,7 @@ public class RegisterVADoc {
 	private String paymentCode;
 	private String description;
 	private FeeResult fees;
+	private VAEvent event;
 
 	public String getId() {
 		return id;
@@ -219,6 +225,14 @@ public class RegisterVADoc {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public VAEvent getEvent() {
+		return event;
+	}
+
+	public void setEvent(VAEvent event) {
+		this.event = event;
 	}
 
 }
