@@ -781,6 +781,7 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 				vaView.setAmount(listVA.get(i).getAmount());
 				vaView.setFormattedAmount(Utils.formatAmount(listVA.get(i).getAmount()));
 				vaView.setTransactionDate(listVA.get(i).getTransactionDate());
+				vaView.setFormattedTransactionDate(listVA.get(i).getFormattedTransactionDate());
 				vaView.setFullPayment(listVA.get(i).isFullPayment());
 				vaView.setPersistent(listVA.get(i).isPersistent());
 				vaView.setDescription(listVA.get(i).getDescription());
@@ -910,39 +911,39 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 		}
 	}
 
-	/**
-	 * @Override public LoadBillingStatusByMemberResponse
-	 *           loadBillingStatusByMember(Holder<Header> headerParam,
-	 *           LoadBillingStatusByMemberRequest req) {
-	 *           LoadBillingStatusByMemberResponse res = new
-	 *           LoadBillingStatusByMemberResponse(); try { Members members =
-	 *           memberValidation.validateMember(req.getUsername(), true);
-	 * 
-	 *           // List Paid or Pending Billing List<VARecordView> vaPaidRecord =
-	 *           baseRepository.getVirtualAccountRepository().loadVAPaid(req,
-	 *           members); VAPaidRecord vPR = new VAPaidRecord();
-	 *           vPR.setVaPaidRecord(vaPaidRecord); String fromDate =
-	 *           req.getFromDate() != null ? req.getFromDate() :
-	 *           Utils.GetDate("yyyy-MM-dd"); String toDate = req.getFromDate() !=
-	 *           null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
-	 *           vPR.setTotalRecords(
-	 *           baseRepository.getVirtualAccountRepository().countVAPaid(members.getId(),
-	 *           fromDate, toDate));
-	 * 
-	 *           // List Unpaid or Expired Billing List<VARecordView> vaUnpaidRecord
-	 *           = baseRepository.getVirtualAccountRepository().loadVAUnPaid(req,
-	 *           members); // Remove PAID Billing
-	 *           vaUnpaidRecord.removeAll(vaPaidRecord);
-	 * 
-	 *           VAUnPaidRecord uVPR = new VAUnPaidRecord();
-	 *           uVPR.setVaUnPaidRecord(vaUnpaidRecord);
-	 *           uVPR.setTotalRecords(baseRepository.getVirtualAccountRepository().countVAUnPaid(members.getId()));
-	 * 
-	 *           // All res.setVaPaidRecord(vPR); res.setVaUnPaidRecord(uVPR);
-	 *           res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-	 * 
-	 *           return res; } catch (Exception ex) {
-	 *           res.setStatus(StatusBuilder.getStatus(String.valueOf(ex.getMessage())));
-	 *           return res; } }
-	 **/
+	/**@Override 
+	public LoadBillingStatusByMemberResponse
+	            loadBillingStatusByMember(Holder<Header> headerParam,
+	            LoadBillingStatusByMemberRequest req) {
+	            LoadBillingStatusByMemberResponse res = new
+	            LoadBillingStatusByMemberResponse(); try { Members members =
+	            memberValidation.validateMember(req.getUsername(), true);
+	  
+	            // List Paid or Pending Billing List<VARecordView> vaPaidRecord =
+	            baseRepository.getVirtualAccountRepository().loadVAPaid(req,
+	            members); VAPaidRecord vPR = new VAPaidRecord();
+	            vPR.setVaPaidRecord(vaPaidRecord); String fromDate =
+	            req.getFromDate() != null ? req.getFromDate() :
+	            Utils.GetDate("yyyy-MM-dd"); String toDate = req.getFromDate() !=
+	            null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
+	            vPR.setTotalRecords(
+	            baseRepository.getVirtualAccountRepository().countVAPaid(members.getId(),
+	            fromDate, toDate));
+	  
+	            // List Unpaid or Expired Billing 
+	            List<VARecordView> vaUnpaidRecord = baseRepository.getVirtualAccountRepository().loadVAUnPaid(req,
+	            members); // Remove PAID Billing
+	            vaUnpaidRecord.removeAll(vaPaidRecord);
+	  
+	            VAUnPaidRecord uVPR = new VAUnPaidRecord();
+	            uVPR.setVaUnPaidRecord(vaUnpaidRecord);
+	            uVPR.setTotalRecords(baseRepository.getVirtualAccountRepository().countVAUnPaid(members.getId()));
+	  
+	            // All res.setVaPaidRecord(vPR); res.setVaUnPaidRecord(uVPR);
+	            res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+	  
+	            return res; } catch (Exception ex) {
+	            res.setStatus(StatusBuilder.getStatus(String.valueOf(ex.getMessage())));
+	            return res; } }**/
+
 }

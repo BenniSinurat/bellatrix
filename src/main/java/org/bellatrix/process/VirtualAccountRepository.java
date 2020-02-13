@@ -270,6 +270,7 @@ public class VirtualAccountRepository {
 							BillingStatus vav = new BillingStatus();
 							vav.setReferenceNumber(rs.getString("reference_number"));
 							vav.setTransactionDate(rs.getTimestamp("transaction_date"));
+							vav.setFormattedTransactionDate(Utils.formatDate(rs.getTimestamp("transaction_date")));
 							vav.setStatus(rs.getString("transaction_state"));
 							vav.setTransactionNumber(rs.getString("transaction_number"));
 							return vav;

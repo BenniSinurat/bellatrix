@@ -5,6 +5,7 @@ import java.util.Date;
 public class BillingStatus {
 	private String status;
 	private String referenceNumber;
+	private String formattedTransactionDate;
 	private Date transactionDate;
 	private String transactionNumber;
 
@@ -22,6 +23,14 @@ public class BillingStatus {
 
 	public void setReferenceNumber(String referenceNumber) {
 		this.referenceNumber = referenceNumber;
+	}
+
+	public String getFormattedTransactionDate() {
+		return formattedTransactionDate;
+	}
+
+	public void setFormattedTransactionDate(String formattedTransactionDate) {
+		this.formattedTransactionDate = formattedTransactionDate;
 	}
 
 	public Date getTransactionDate() {

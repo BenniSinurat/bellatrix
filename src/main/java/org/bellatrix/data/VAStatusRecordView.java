@@ -27,6 +27,7 @@ public class VAStatusRecordView {
 	private String ticketID;
 	private String status;
 	private Date transactionDate;
+	private String formattedTransactionDate;
 	private String paymentCode;
 	private String description;
 	private VAEvent vaEvent;
@@ -182,6 +183,14 @@ public class VAStatusRecordView {
 
 	public void setTransactionDate(Date transactionDate) {
 		this.transactionDate = transactionDate;
+	}
+
+	public String getFormattedTransactionDate() {
+		return formattedTransactionDate;
+	}
+
+	public void setFormattedTransactionDate(String formattedTransactionDate) {
+		this.formattedTransactionDate = formattedTransactionDate;
 	}
 
 	public VAEvent getVaEvent() {

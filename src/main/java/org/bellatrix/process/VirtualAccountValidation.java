@@ -342,6 +342,7 @@ public class VirtualAccountValidation {
 				va.setStatus("EXPIRED");
 				va.setReferenceNumber("");
 				va.setTransactionDate(null);
+				va.setFormattedTransactionDate(null);
 				va.setTransactionNumber("");
 				listVAStatus.add(va);
 			}
@@ -361,6 +362,7 @@ public class VirtualAccountValidation {
 				va.setStatus("UNPAID");
 				va.setReferenceNumber("");
 				va.setTransactionDate(null);
+				va.setFormattedTransactionDate(null);
 				va.setTransactionNumber("");
 				listVAStatus.add(va);
 			}
