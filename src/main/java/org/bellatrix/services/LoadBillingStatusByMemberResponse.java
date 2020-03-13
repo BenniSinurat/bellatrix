@@ -1,29 +1,22 @@
 package org.bellatrix.services;
 
+import java.util.List;
+
 import org.bellatrix.data.ResponseStatus;
-import org.bellatrix.data.VAPaidRecord;
-import org.bellatrix.data.VAUnPaidRecord;
+import org.bellatrix.data.VARecordView;
 
 public class LoadBillingStatusByMemberResponse {
 
-	private VAPaidRecord vaPaidRecord;
-	private VAUnPaidRecord vaUnPaidRecord;
+	private List<VARecordView> vaRecord;
 	private ResponseStatus status;
+	private Integer totalRecords;
 
-	public VAPaidRecord getVaPaidRecord() {
-		return vaPaidRecord;
+	public List<VARecordView> getVaRecord() {
+		return vaRecord;
 	}
 
-	public void setVaPaidRecord(VAPaidRecord vaPaidRecord) {
-		this.vaPaidRecord = vaPaidRecord;
-	}
-
-	public VAUnPaidRecord getVaUnPaidRecord() {
-		return vaUnPaidRecord;
-	}
-
-	public void setVaUnPaidRecord(VAUnPaidRecord vaUnPaidRecord) {
-		this.vaUnPaidRecord = vaUnPaidRecord;
+	public void setVaRecord(List<VARecordView> vaRecord) {
+		this.vaRecord = vaRecord;
 	}
 
 	public ResponseStatus getStatus() {
@@ -32,6 +25,14 @@ public class LoadBillingStatusByMemberResponse {
 
 	public void setStatus(ResponseStatus status) {
 		this.status = status;
+	}
+
+	public Integer getTotalRecords() {
+		return totalRecords;
+	}
+
+	public void setTotalRecords(Integer totalRecords) {
+		this.totalRecords = totalRecords;
 	}
 
 }

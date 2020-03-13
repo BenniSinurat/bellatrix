@@ -2,6 +2,7 @@ package org.bellatrix.data;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 public class VARecordView {
 
@@ -26,6 +27,8 @@ public class VARecordView {
 	private String ticketID;
 	private String status;
 	private Date transactionDate;
+	private String formattedTransactionDate;
+	private String transactionNumber;
 	private String paymentCode;
 	private VAEvent vaEvent;
 	private String description;
@@ -222,4 +225,19 @@ public class VARecordView {
 		this.formattedCreatedDate = formattedCreatedDate;
 	}
 
+	public String getFormattedTransactionDate() {
+		return formattedTransactionDate;
+	}
+
+	public void setFormattedTransactionDate(String formattedTransactionDate) {
+		this.formattedTransactionDate = formattedTransactionDate;
+	}
+
+	public String getTransactionNumber() {
+		return transactionNumber;
+	}
+
+	public void setTransactionNumber(String transactionNumber) {
+		this.transactionNumber = transactionNumber;
+	}
 }

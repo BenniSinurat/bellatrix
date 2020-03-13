@@ -1,7 +1,6 @@
 package org.bellatrix.services;
 
 public class VADeleteRequest {
-
 	private String paymentCode;
 	private String username;
 

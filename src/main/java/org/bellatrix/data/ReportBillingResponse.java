@@ -13,6 +13,7 @@ public class ReportBillingResponse implements Serializable {
 	private Integer unpaidBilling;
 	private Integer paidBilling;
 	private Integer expiredBilling;
+	private Integer reversedBilling;
 	private BigDecimal pendingAmount;
 	private String formattedPendingAmount;
 	private BigDecimal paidAmount;
@@ -21,6 +22,8 @@ public class ReportBillingResponse implements Serializable {
 	private String formattedUnpaidAmount;
 	private BigDecimal expiredAmount;
 	private String formattedExpiredAmount;
+	private BigDecimal reversedAmount;
+	private String formattedReverseAmount;
 	private BigDecimal totalAmount;
 	private String formattedTotalAmount;
 	private Integer totalRecords;
@@ -160,6 +163,30 @@ public class ReportBillingResponse implements Serializable {
 
 	public void setFormattedExpiredAmount(String formattedExpiredAmount) {
 		this.formattedExpiredAmount = formattedExpiredAmount;
+	}
+
+	public Integer getReversedBilling() {
+		return reversedBilling;
+	}
+
+	public void setReversedBilling(Integer reversedBilling) {
+		this.reversedBilling = reversedBilling;
+	}
+
+	public BigDecimal getReversedAmount() {
+		return reversedAmount;
+	}
+
+	public void setReversedAmount(BigDecimal reversedAmount) {
+		this.reversedAmount = reversedAmount;
+	}
+
+	public String getFormattedReverseAmount() {
+		return formattedReverseAmount;
+	}
+
+	public void setFormattedReverseAmount(String formattedReverseAmount) {
+		this.formattedReverseAmount = formattedReverseAmount;
 	}
 
 }

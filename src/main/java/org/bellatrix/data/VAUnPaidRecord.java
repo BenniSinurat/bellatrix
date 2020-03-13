@@ -3,14 +3,14 @@ package org.bellatrix.data;
 import java.util.List;
 
 public class VAUnPaidRecord {
-	private List<VARecordView> vaUnPaidRecord;
+	private List<VAStatusRecordView> vaUnPaidRecord;
 	private Integer totalRecords;
 
-	public List<VARecordView> getVaPaidRecord() {
+	public List<VAStatusRecordView> getVaUnPaidRecord() {
 		return vaUnPaidRecord;
 	}
 
-	public void setVaUnPaidRecord(List<VARecordView> vaUnPaidRecord) {
+	public void setVaUnPaidRecord(List<VAStatusRecordView> vaUnPaidRecord) {
 		this.vaUnPaidRecord = vaUnPaidRecord;
 	}
 

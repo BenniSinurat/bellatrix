@@ -5,6 +5,10 @@ import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Random;
@@ -122,4 +126,8 @@ public abstract class Utils {
 		}
 	}
 
+	public static Date stringToDate(String date) {
+		ZonedDateTime result = ZonedDateTime.parse(date, DateTimeFormatter.ISO_DATE_TIME);
+		return Date.from(result.toInstant());
+	}
 }

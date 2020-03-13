@@ -259,6 +259,23 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 				<jms:outbound-endpoint connector-ref="Active_MQ"
 					queue="notification.email" doc:name="JMS" />
 			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'registerPartner']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<parse-template location="PartnerRegister.tmp"
+					mimeType="text/html" doc:name="Parse Template" />
+				<expression-component doc:name="Expression">
+                      <![CDATA[regMap = new java.util.HashMap();
+                             regMap['from']= 'noreply@info.narobil.id';
+                             regMap['to']= flowVars['to'];
+                             regMap['subject']= 'MERCHANT REGISTRATION';
+                             regMap['body']= payload ;
+                       payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
 			<otherwise>
 				<logger level="INFO"
 					message="[UNHANDLED Notification Type : #[message.inboundProperties.'NOTIFICATION_TYPE']]"

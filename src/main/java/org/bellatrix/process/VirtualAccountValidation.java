@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.bellatrix.data.BillingStatus;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.RegisterVADoc;
 import org.bellatrix.data.ReportBillingRequest;
@@ -16,7 +15,6 @@ import org.bellatrix.data.TransferTypes;
 import org.bellatrix.data.VADetails;
 import org.bellatrix.data.VAEventDoc;
 import org.bellatrix.data.VARecordView;
-import org.bellatrix.data.VAStatusRecordView;
 import org.bellatrix.data.VirtualAccounts;
 import org.bellatrix.services.LoadVAByEventRequest;
 import org.bellatrix.services.LoadVAByIDRequest;
@@ -35,8 +33,8 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Component;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
+//import com.hazelcast.core.HazelcastInstance;
+//import com.hazelcast.core.IMap;
 
 @Component
 public class VirtualAccountValidation {
@@ -49,12 +47,12 @@ public class VirtualAccountValidation {
 	private TransferTypeValidation transferTypeValidation;
 	@Autowired
 	private BaseRepository baseRepository;
-	@Autowired
-	private HazelcastInstance instance;
+	//@Autowired
+	//private HazelcastInstance instance;
 	private Logger logger = Logger.getLogger(VirtualAccountValidation.class);
 
 	public VADetails validateVARequest(String token, VARegisterRequest req) throws TransactionException {
-		IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		Members member = memberValidation.validateMember(req.getUsername(), false);
 		Members fromMember = null;
@@ -166,7 +164,7 @@ public class VirtualAccountValidation {
 	}
 
 	public void validateVADeletion(String token, VADeleteRequest req) throws TransactionException {
-		IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+		//IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		webserviceValidation.validateWebservice(token);
 		memberValidation.validateMember(req.getUsername(), true);
 
@@ -179,10 +177,10 @@ public class VirtualAccountValidation {
 		if (!rva.getMember().getUsername().equalsIgnoreCase(req.getUsername())) {
 			throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
 		}
-		mapRVAMap.delete(req.getPaymentCode());
-		//baseRepository.getPersistenceRepository().delete(new Query(Criteria.where("_id").is(req.getPaymentCode())),
-		//		RegisterVADoc.class);
-		baseRepository.getVirtualAccountRepository().deleteVA(req.getPaymentCode());
+		//mapRVAMap.delete(req.getPaymentCode());
+		baseRepository.getPersistenceRepository().delete(new Query(Criteria.where("_id").is(req.getPaymentCode())),
+				RegisterVADoc.class);
+		baseRepository.getVirtualAccountRepository().deleteVA(rva.getTicketID());
 	}
 
 	public List<BankVA> validateBankVA(String token, VABankRequest req) throws TransactionException {
@@ -310,7 +308,7 @@ public class VirtualAccountValidation {
 		return bankVA;
 	}
 
-	public List<VAStatusRecordView> validateLoadVAStatus(String token, LoadVAStatusByMemberRequest req,
+	/**public List<VAStatusRecordView> validateLoadVAStatus(String token, LoadVAStatusByMemberRequest req,
 			Integer memberID) throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 
@@ -320,12 +318,15 @@ public class VirtualAccountValidation {
 		List<VAStatusRecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByMemberStatus(req.getUsername(),
 				memberID, fromDate, toDate, req.getCurrentPage(), req.getPageSize());
 		return listVA;
-	}
+	}**/
 
-	public List<BillingStatus> validateVAStatus(Integer ID, String paymentCode) throws TransactionException {
+	/**public List<BillingStatus> validateVAStatus(Integer ID, String paymentCode) throws TransactionException {
 		RegisterVADoc rva = baseRepository.getPersistenceRepository()
 				.retrieve(new Query(Criteria.where("_id").is(paymentCode)), RegisterVADoc.class);
 		List<BillingStatus> listVAStatus = baseRepository.getVirtualAccountRepository().getVAPaymentStatus(ID);
+		for(int i = 0; i < listVAStatus.size(); i++) {
+			logger.info("[Billing " + paymentCode + " ID: " + listVAStatus.get(i).getStatus() + "]");
+		}
 		if (rva == null) {
 			if (listVAStatus.size() > 0) {
 				for (int i = 0; i < listVAStatus.size(); i++) {
@@ -369,16 +370,16 @@ public class VirtualAccountValidation {
 
 		}
 		return listVAStatus;
-	}
+	}**/
 	
-	public List<VAStatusRecordView> validateLoadVAByStatus(String token, LoadVAStatusByMemberRequest req,
+	public List<VARecordView> validateLoadVAByStatus(String token, LoadVAStatusByMemberRequest req,
 			Integer memberID) throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 
 		String fromDate = req.getFromDate() != null ? req.getFromDate() : Utils.GetDate("yyyy-MM-dd");
 		String toDate = req.getFromDate() != null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
 
-		List<VAStatusRecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByStatus(req.getUsername(),
+		List<VARecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByStatus(req.getUsername(),
 				memberID, fromDate, toDate, req.getCurrentPage(), req.getPageSize());
 		return listVA;
 	}	
@@ -390,12 +391,11 @@ public class VirtualAccountValidation {
 		baseRepository.getVirtualAccountRepository().updateStatusBillingVA(traceNumber, transactionNumber);
 	}
 
-	public List<VAStatusRecordView> validateReportBilling(String token, ReportBillingRequest req, Integer memberID)
+	public List<VARecordView> validateReportBilling(String token, ReportBillingRequest req, Members members)
 			throws TransactionException {
 		webserviceValidation.validateWebservice(token);
 
-		List<VAStatusRecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAReport(req.getUsername(),
-				memberID);
+		List<VARecordView> listVA = baseRepository.getVirtualAccountRepository().loadVAByMemberID(members);
 		return listVA;
 	}
 
