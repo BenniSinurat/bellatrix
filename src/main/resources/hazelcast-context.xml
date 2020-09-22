@@ -83,11 +83,10 @@ http://www.hazelcast.com/schema/spring classpath:hazelcast.xsd">
 			<hz:map name="AccountLock" time-to-live-seconds="90" />
 			<hz:map name="RegisterVAMap" read-backup-data="true">
 				<hz:map-store enabled="${generate.payment.ticket.persistent.mode}"
+					write-delay-seconds="${cache.global.write.delay.second}"
 					initial-mode="EAGER" implementation="RegisterVAListener" />
-				<!-- hz:entry-listeners>
-					<hz:entry-listener include-value="true"
-						implementation="RegisterVAListener" />
-				</hz:entry-listeners -->
+				<!-- hz:entry-listeners> <hz:entry-listener include-value="true" implementation="RegisterVAListener" 
+					/> </hz:entry-listeners -->
 			</hz:map>
 		</hz:config>
 	</hz:hazelcast>

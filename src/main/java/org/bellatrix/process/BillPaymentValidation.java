@@ -2,6 +2,7 @@ package org.bellatrix.process;
 
 import java.util.List;
 
+import org.apache.log4j.Logger;
 import org.bellatrix.data.Billers;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.PaymentChannel;
@@ -20,6 +21,7 @@ public class BillPaymentValidation {
 	private MemberValidation memberValidation;
 	@Autowired
 	private TransferTypeValidation transferTypeValidation;
+	private Logger logger = Logger.getLogger(BillPaymentValidation.class);
 
 	public List<Billers> validateMemberBillers() throws TransactionException {
 		List<Billers> billers = baseRepository.getBillPaymentRepository().getBillerList();
@@ -62,6 +64,15 @@ public class BillPaymentValidation {
 
 	public List<PaymentChannel> validatePaymentChannel() throws TransactionException {
 		List<PaymentChannel> channel = baseRepository.getBillPaymentRepository().loadChannels();
+		return channel;
+	}
+
+	public PaymentChannel validatePaymentChannel(Integer channelID) throws TransactionException {
+		PaymentChannel channel = baseRepository.getBillPaymentRepository().findPaymentChannelByID(channelID);
+		if (channel == null) {
+			logger.info("[Invalid Transfer Type ID [" + channelID + "]]");
+			throw new TransactionException(String.valueOf(Status.INVALID_PAYMENT_CHANNEL));
+		}
 		return channel;
 	}
 

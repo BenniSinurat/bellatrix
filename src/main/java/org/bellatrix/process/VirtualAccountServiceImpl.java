@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import javax.xml.ws.Holder;
 
@@ -30,12 +29,12 @@ import org.bellatrix.data.VADetails;
 import org.bellatrix.data.VAEvent;
 import org.bellatrix.data.VAEventDoc;
 import org.bellatrix.data.VARecordView;
+import org.bellatrix.services.CreateEventStatusRequest;
+import org.bellatrix.services.CreateEventStatusResponse;
 import org.bellatrix.services.CreateVAEventRequest;
 import org.bellatrix.services.CreateVAEventResponse;
 import org.bellatrix.services.CredentialResponse;
 import org.bellatrix.services.DeleteVAEventRequest;
-import org.bellatrix.services.LoadBillingStatusByMemberRequest;
-import org.bellatrix.services.LoadBillingStatusByMemberResponse;
 import org.bellatrix.services.LoadVAByEventRequest;
 import org.bellatrix.services.LoadVAByEventResponse;
 import org.bellatrix.services.LoadVAByIDRequest;
@@ -96,7 +95,7 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 
 	@Override
 	public VARegisterResponse registerVA(Holder<Header> headerParam, VARegisterRequest req) {
-		IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
+		// IMap<String, RegisterVADoc> mapRVAMap = instance.getMap("RegisterVAMap");
 		try {
 			VARegisterResponse var = new VARegisterResponse();
 			VADetails vad = virtualAccountValidation.validateVARequest(headerParam.value.getToken(), req);
@@ -129,9 +128,15 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			rva.setFromMember(vad.getFromMember());
 			rva.setPrivateField(req.getPrivateField());
 			rva.setDescription(req.getDescription());
+			rva.setMembership(vad.getMembership());
+			rva.setBillingCycle(req.getBillingCycle());
+			rva.setSubscribed(req.isSubscribed());
+			rva.setStatus("ACTIVE");
 
 			VAEvent vaEvent = new VAEvent();
 			vaEvent.setEventID(req.getEventID());
+
+			rva.setEvent(vaEvent);
 
 			var.setBankCode(vad.getVirtualAccount().getBankCode());
 			var.setBankName(vad.getVirtualAccount().getBankName());
@@ -155,8 +160,9 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			 * SAVE TO HAZELCAST
 			 */
 			Date expired = req.getExpiredDateTime();
-			//mapRVAMap.put(vad.getPaymentCode(), rva, Utils.datetimeToLong(Utils.formatDate(expired)),
-			//		TimeUnit.MILLISECONDS);
+			// mapRVAMap.put(vad.getPaymentCode(), rva,
+			// Utils.datetimeToLong(Utils.formatDate(expired)),
+			// TimeUnit.MILLISECONDS);
 			baseRepository.getPersistenceRepository().create(rva);
 
 			baseRepository.getVirtualAccountRepository().registerBillingVA(req.getEventID(), rva);
@@ -212,8 +218,29 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 		try {
 			RegisterVADoc vadoc = virtualAccountValidation.validateVAPaymentCode(headerParam.value.getToken(),
 					req.getPaymentCode(), req.getUsername());
+			if (vadoc.getStatus() != null) {
+				if (vadoc.getStatus().equalsIgnoreCase("INACTIVE")) {
+					logger.info("Billing Status : INACTIVE");
+					throw new TransactionException(String.valueOf(Status.BILLING_INACTIVE));
+				}
+			}
 
-			vir.setAmount(vadoc.getAmount());
+			vir.setSubscribed(vadoc.isSubscribed());
+			vir.setMembership(vadoc.getMembership());
+			vir.setBillingCyle(vadoc.getBillingCycle());
+			if (vadoc.isSubscribed()) {
+				List<VARecordView> subVadoc = baseRepository.getVirtualAccountRepository().subscribedVA(vadoc);
+				for (int i = 0; i < subVadoc.size(); i++) {
+					if (subVadoc.get(i).getStatus().equalsIgnoreCase("UNPAID")) {
+						vir.setAmount(subVadoc.get(i).getAmount());
+					} else {
+						throw new TransactionException(String.valueOf(Status.PAYMENT_CODE_NOT_FOUND));
+					}
+				}
+			} else {
+				vir.setAmount(vadoc.getAmount());
+			}
+
 			vir.setName(vadoc.getName());
 			vir.setPaymentCode(req.getPaymentCode());
 			vir.setBankCode(vadoc.getBankCode());
@@ -252,6 +279,12 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 		try {
 			VADetails va = virtualAccountValidation.validateVAPayment(headerParam.value.getToken(), req);
 
+			if (va.getRegVA().getStatus() != null) {
+				if (va.getRegVA().getStatus().equalsIgnoreCase("INACTIVE")) {
+					throw new TransactionException(String.valueOf(Status.BILLING_INACTIVE));
+				}
+			}
+
 			PaymentRequest preq = new PaymentRequest();
 			preq.setBillingID(Integer.parseInt(va.getRegVA().getId()));
 			preq.setAmount(req.getAmount());
@@ -280,8 +313,8 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 				preq.setFromMember(req.getFromMember());
 				preq.setReferenceNumber(va.getPaymentCode());
 			} else {
-				preq.setDescription(
-						"RefNo : " + va.getRegVA().getReferenceNumber() + ", Name : " + va.getRegVA().getName());
+				preq.setDescription("Billing Payment: " + va.getPaymentCode() + ", RefNo : "
+						+ va.getRegVA().getReferenceNumber() + ", Name : " + va.getRegVA().getName());
 				preq.setTransferTypeID(va.getRegVA().getTransferType().getId());
 				preq.setFromMember(va.getFromMember().getUsername());
 				preq.setReferenceNumber(va.getPaymentCode());
@@ -291,11 +324,62 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			PaymentDetails pd = paymentValidation.validatePayment(preq, headerParam.value.getToken(), trxState);
 
 			if (pd != null) {
+				// Update table billing status
+				if (va.getRegVA().isSubscribed()) {
+					if (req.getTransferTypeID() != null) {
+						if (va.getFromMember().getGroupID() == 17) {
+							trxState = "PENDING";
+						} else {
+							trxState = "PROCESSED";
+						}
+					} else {
+						trxState = "PROCESSED";
+					}
+					baseRepository.getVirtualAccountRepository().updateSubscribedVA(trxState,
+							Integer.parseInt(va.getRegVA().getId()), req.getTraceNumber(), pd.getTransactionNumber());
+				}
+				try {
+					// Update table event status
+					if (va.getRegVA().getEvent().getEventID() != null) {
+						CreateEventStatusRequest cESReq = new CreateEventStatusRequest();
+						cESReq.setEventID(va.getRegVA().getEvent().getEventID());
+						cESReq.setName(va.getRegVA().getName());
+						cESReq.setEmail(va.getRegVA().getEmail());
+						cESReq.setMsisdn(va.getRegVA().getMsisdn());
+						cESReq.setReferenceNumber(va.getRegVA().getPaymentCode());
+						cESReq.setAmount(va.getRegVA().getAmount());
+						if (req.getTransferTypeID() != null) {
+							if (va.getFromMember().getGroupID() == 17) {
+								trxState = "PENDING";
+							} else {
+								trxState = "PROCESSED";
+							}
+						} else {
+							trxState = "PROCESSED";
+						}
+						cESReq.setStatus(trxState);
+						cESReq.setTraceNumber(req.getTraceNumber());
+						cESReq.setTransactionNumber(pd.getTransactionNumber());
+						cESReq.setDescription(va.getRegVA().getDescription());
+						Members member = memberValidation.validateMember(va.getRegVA().getMember().getUsername(), true);
+						baseRepository.getVirtualAccountRepository().registerEventStatus(cESReq, member);
+					}
+				} catch (NullPointerException e) {
+					logger.info("Event ID is NULL");
+				}
+
+				// Transaction NOtif
 				Members members = new Members();
 				members.setId(pd.getFromMember().getId());
 				members.setEmail(va.getRegVA().getEmail());
 				members.setName(pd.getFromMember().getName());
 				pd.setFromMember(members);
+				pd.setTransactionDate(pd.getTransactionDate());
+				pd.setTransferType(pd.getTransferType());
+				pd.setDescription(va.getRegVA().getDescription());
+				pd.setRequest(pd.getRequest());
+				pd.setTransactionNumber(pd.getTransactionNumber());
+				pd.setFees(pd.getFees());
 				List<Notifications> ln = baseRepository.getTransferTypeRepository()
 						.loadNotificationByTransferType(pd.getTransferType().getId());
 				pd.setNotification(ln);
@@ -323,8 +407,11 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			vpr.setUsername(va.getRegVA().getReferenceNumber());
 			vpr.setTransactionDate(pd.getTransactionDate());
 			vpr.setDescription(va.getRegVA().getDescription());
+			vpr.setSubscribed(va.getRegVA().isSubscribed());
+			vpr.setMembership(va.getMembership());
+			vpr.setBillingCycle(va.getRegVA().getBillingCycle());
 
-			/**TreeMap<String, String> vaNotif = new TreeMap<String, String>();
+			TreeMap<String, String> vaNotif = new TreeMap<String, String>();
 			vaNotif.put("transferID", String.valueOf(pd.getTransferID()));
 			vaNotif.put("notificationDate", LocalDateTime.now().toString());
 			vaNotif.put("paymentCode", va.getPaymentCode());
@@ -333,6 +420,7 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			vaNotif.put("amount", pd.getRequest().getAmount().toPlainString());
 			vaNotif.put("callbackURL", va.getRegVA().getCallbackURL());
 			vaNotif.put("description", va.getRegVA().getDescription());
+			vaNotif.put("traceNumber", pd.getRequest().getTraceNumber());
 
 			if (preq.getTransferTypeID() == null) {
 				vaNotif.put("bankCode", va.getRegVA().getBankCode());
@@ -352,7 +440,7 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 				header.put("requestAuth", requestAuth);
 				header.put("NOTIFICATION_ORIGIN", va.getRegVA().getMember().getUsername());
 				client.dispatch("VANotificationVM", vaNotif, header);
-			}**/
+			}
 
 			baseRepository.getMessageRepository().sendMessage(pd.getFromMember().getId(), pd.getToMember().getId(),
 					pd.getTransferType().getName() + " " + va.getRegVA().getPaymentCode(),
@@ -394,47 +482,61 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			VAUpdateResponse var = new VAUpdateResponse();
 			RegisterVADoc rva = virtualAccountValidation.validateVAPaymentCode(headerParam.value.getToken(),
 					req.getPaymentCode(), req.getUsername());
-			String ticketID = UUID.randomUUID().toString();
 
 			if (req.getAmount().compareTo(BigDecimal.ZERO) != 0 && req.getAmount().compareTo(rva.getAmount()) != 0) {
 				rva.setAmount(req.getAmount());
+			} else {
+				rva.setAmount(rva.getAmount());
 			}
 
-			if (req.getCallbackURL() != null && !req.getCallbackURL().equalsIgnoreCase(rva.getCallbackURL())) {
+			if (req.getCallbackURL().equalsIgnoreCase("")) {
+				rva.setCallbackURL(rva.getCallbackURL());
+			} else {
 				rva.setCallbackURL(req.getCallbackURL());
 			}
 
-			if (req.getName() != null && !req.getName().equalsIgnoreCase(rva.getName())) {
+			if (req.getName().equalsIgnoreCase("")) {
+				rva.setName(rva.getName());
+			} else {
 				rva.setName(req.getName());
 			}
 
-			if (req.isPersistent() != null && req.isPersistent() != rva.isPersistent()) {
-				rva.setPersistent(req.isPersistent());
-				if (!rva.isPersistent()) {
-					LocalDateTime timePoint = LocalDateTime.now();
-					timePoint = timePoint.plusMinutes(req.getExpiredAtMinute());
-					rva.setExpiredAt(timePoint);
-				} else {
-					rva.setExpiredAt(null);
-				}
+			if (req.getEmail().equalsIgnoreCase("")) {
+				rva.setEmail(rva.getEmail());
+			} else {
+				rva.setEmail(req.getEmail());
 			}
 
-			if (req.isFullPayment() != null && req.isFullPayment() != rva.isFullPayment()) {
-				rva.setFullPayment(req.isFullPayment());
-				if (!rva.isFullPayment() && req.getMinimumPayment() != null) {
-					rva.setMinimumPayment(req.getMinimumPayment());
-				} else {
-					rva.setMinimumPayment(BigDecimal.ZERO);
-				}
+			if (req.getMsisdn().equalsIgnoreCase("")) {
+				rva.setMsisdn(rva.getMsisdn());
+			} else {
+				rva.setMsisdn(req.getMsisdn());
 			}
 
-			rva.setTicketID(ticketID);
+			if (req.getDescription().equalsIgnoreCase("")) {
+				rva.setDescription(rva.getDescription());
+			} else {
+				rva.setDescription(req.getDescription());
+			}
+
+			if (req.getStatus().equalsIgnoreCase("")) {
+				if(rva.getStatus() == null) {
+					rva.setStatus("ACTIVE");
+				}else {
+					rva.setStatus(rva.getStatus());
+				}
+			} else {
+				rva.setStatus(req.getStatus());
+			}
+
+			rva.setTicketID(rva.getTicketID());
 
 			var.setPaymentCode(req.getPaymentCode());
-			var.setTicketID(ticketID);
+			var.setTicketID(rva.getTicketID());
 			var.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 
 			baseRepository.getPersistenceRepository().update(rva);
+			baseRepository.getVirtualAccountRepository().updateBilling(rva);
 
 			return var;
 		} catch (TransactionException ex) {
@@ -615,6 +717,19 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 	}
 
 	@Override
+	public CreateEventStatusResponse createEventStatus(Holder<Header> headerParam, CreateEventStatusRequest req) {
+		CreateEventStatusResponse createEventResponse = new CreateEventStatusResponse();
+		try {
+			Members member = virtualAccountValidation.validateVAEvent(headerParam.value.getToken(), req.getUsername());
+			baseRepository.getVirtualAccountRepository().registerEventStatus(req, member);
+		} catch (TransactionException e) {
+			createEventResponse.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return createEventResponse;
+		}
+		return createEventResponse;
+	}
+
+	@Override
 	public void deleteVAEvent(Holder<Header> headerParam, DeleteVAEventRequest req) throws Exception {
 		virtualAccountValidation.validateVAEventDelete(headerParam.value.getToken(), req.getUsername(),
 				req.getTicketID());
@@ -690,183 +805,28 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 		}
 	}
 
-	/**
-	 * @Override public LoadVAStatusByMemberResponse
-	 *           loadVAByMemberStatus(Holder<Header> headerParam,
-	 *           LoadVAStatusByMemberRequest req) { LoadVAStatusByMemberResponse
-	 *           loadVAByMemberResponse = new LoadVAStatusByMemberResponse(); try {
-	 *           Members members =
-	 *           memberValidation.validateMember(req.getUsername(), true);
-	 *           List<VAStatusRecordView> listVA = virtualAccountValidation
-	 *           .validateLoadVAStatus(headerParam.value.getToken(), req,
-	 *           members.getId());
-	 * 
-	 *           if (listVA.size() == 0) {
-	 *           loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.NO_TRANSACTION));
-	 *           return loadVAByMemberResponse; }
-	 * 
-	 *           List<VAStatusRecordView> listVaView = new
-	 *           LinkedList<VAStatusRecordView>(); List<BillingStatus> status = new
-	 *           LinkedList<BillingStatus>(); for (int i = 0; i < listVA.size();
-	 *           i++) { VAStatusRecordView vaView = new VAStatusRecordView();
-	 *           vaView.setBankID(listVA.get(i).getBankID());
-	 *           vaView.setBankCode(listVA.get(i).getBankCode());
-	 *           vaView.setBankName(listVA.get(i).getBankName());
-	 *           vaView.setId(listVA.get(i).getId());
-	 *           vaView.setPaymentCode(listVA.get(i).getPaymentCode());
-	 *           vaView.setName(listVA.get(i).getName());
-	 *           vaView.setParentUsername(listVA.get(i).getParentUsername());
-	 *           vaView.setReferenceNumber(listVA.get(i).getReferenceNumber());
-	 *           vaView.setAmount(listVA.get(i).getAmount());
-	 *           vaView.setFormattedAmount(Utils.formatAmount(listVA.get(i).getAmount()));
-	 *           vaView.setTransactionDate(listVA.get(i).getTransactionDate());
-	 *           vaView.setFullPayment(listVA.get(i).isFullPayment());
-	 *           vaView.setPersistent(listVA.get(i).isPersistent());
-	 *           vaView.setDescription(listVA.get(i).getDescription());
-	 * 
-	 *           Date expiredDate = listVA.get(i).getExpiredAt() != null ?
-	 *           listVA.get(i).getExpiredAt() : null;
-	 *           vaView.setExpiredAt(expiredDate);
-	 * 
-	 *           status =
-	 *           virtualAccountValidation.validateVAStatus(Integer.valueOf(listVA.get(i).getId()),
-	 *           listVA.get(i).getPaymentCode());
-	 * 
-	 *           vaView.setBillingStatus(status); listVaView.add(vaView); }
-	 * 
-	 *           req.setCurrentPage(0); req.setPageSize(10000000);
-	 *           loadVAByMemberResponse.setTotalRecords(virtualAccountValidation
-	 *           .validateLoadVAStatus(headerParam.value.getToken(), req,
-	 *           members.getId()).size());
-	 *           loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-	 *           loadVAByMemberResponse.setVaRecord(listVaView);
-	 * 
-	 *           return loadVAByMemberResponse; } catch (TransactionException ex) {
-	 *           loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(String.valueOf(ex.getMessage())));
-	 *           return loadVAByMemberResponse; } }
-	 **/
-
 	@Override
 	public LoadVAStatusByMemberResponse loadVAMemberByStatus(Holder<Header> headerParam,
 			LoadVAStatusByMemberRequest req) {
 		LoadVAStatusByMemberResponse loadVAByMemberResponse = new LoadVAStatusByMemberResponse();
 		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			Members members = memberValidation.validateMember(req.getUsername(), true);
-			LoadBillingStatusByMemberRequest r = new LoadBillingStatusByMemberRequest();
-			r.setCurrentPage(req.getCurrentPage());
-			r.setPageSize(req.getPageSize());
 
-			String fromDate = req.getFromDate() != null ? req.getFromDate() : Utils.GetDate("yyyy-MM-dd");
-			String toDate = req.getFromDate() != null ? req.getToDate() : Utils.GetDate("yyyy-MM-dd");
+			List<VARecordView> listVA = new LinkedList<VARecordView>();
 
-			r.setFromDate(fromDate);
-			r.setToDate(toDate);
-			List<VARecordView> vaPaidRecord = baseRepository.getVirtualAccountRepository().loadVAPaid(r, members);
-			List<VARecordView> pendingPaid = baseRepository.getVirtualAccountRepository().loadVAPaidByDate(r, members);
-
-			if (req.getBillingStatus().equalsIgnoreCase("PENDING") || req.getBillingStatus().equalsIgnoreCase("PAID")
-					|| req.getBillingStatus().equalsIgnoreCase("REVERSED")) {
-				if (vaPaidRecord.size() == 0) {
-					loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.NO_TRANSACTION));
-					return loadVAByMemberResponse;
-				}
-
-				// Filter By Status
-				List<VARecordView> statusList = new LinkedList<VARecordView>();
-				for (VARecordView up : vaPaidRecord) {
-					if (up.getStatus().equalsIgnoreCase(req.getBillingStatus())) {
-						statusList.add(up);
-					}
-				}
-
-				// Filter By Status to Total Count
-				List<VARecordView> statusList1 = new LinkedList<VARecordView>();
-				for (VARecordView p : pendingPaid) {
-					if (p.getStatus().equalsIgnoreCase(req.getBillingStatus())) {
-						statusList1.add(p);
-					}
-				}
-
-				loadVAByMemberResponse.setTotalRecords(statusList1.size());
-				loadVAByMemberResponse.setVaRecord(statusList);
-				loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			if (req.isSubscribed()) {
+				listVA = baseRepository.getVirtualAccountRepository().loadVASubscribed(req, members);
+				loadVAByMemberResponse
+						.setTotalRecords(baseRepository.getVirtualAccountRepository().countVASubscribed(req, members));
 			} else {
-				List<VARecordView> listVA = virtualAccountValidation
-						.validateLoadVAByStatus(headerParam.value.getToken(), req, members.getId());
-
-				// ALL VA
-				List<VARecordView> listVA1 = baseRepository.getVirtualAccountRepository().loadVAByDate(members,
-						fromDate, toDate);
-
-				if (listVA.size() == 0) {
-					loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.NO_TRANSACTION));
-					return loadVAByMemberResponse;
-				}
-
-				// Remove PAID & PENDING Billing
-				List<VARecordView> operatedList = new LinkedList<VARecordView>();
-				for (VARecordView up : listVA) {
-					boolean isFound = false;
-					for (VARecordView pd : vaPaidRecord) {
-						if (pd.getId().equals(up.getId()) && pd.isPersistent() == false) {
-							isFound = true;
-							break;
-						}
-					}
-					if (!isFound) {
-						RegisterVADoc rva = baseRepository.getPersistenceRepository().retrieve(
-								new Query(Criteria.where("_id").is(up.getPaymentCode())), RegisterVADoc.class);
-						if (rva == null) {
-							up.setStatus("EXPIRED");
-						} else {
-							up.setStatus("UNPAID");
-						}
-						operatedList.add(up);
-					}
-				}
-
-				// Filter By Status
-				List<VARecordView> statusList = new LinkedList<VARecordView>();
-				for (VARecordView up : operatedList) {
-					if (up.getStatus().equalsIgnoreCase(req.getBillingStatus())) {
-						statusList.add(up);
-					}
-				}
-
-				// Remove PAID & PENDING Billing to Total Count
-				List<VARecordView> operatedList1 = new LinkedList<VARecordView>();
-				for (VARecordView up : listVA1) {
-					boolean isFound = false;
-					for (VARecordView pd : pendingPaid) {
-						if (pd.getId().equals(up.getId()) && pd.isPersistent() == false) {
-							isFound = true;
-							break;
-						}
-					}
-					if (!isFound) {
-						RegisterVADoc rva = baseRepository.getPersistenceRepository().retrieve(
-								new Query(Criteria.where("_id").is(up.getPaymentCode())), RegisterVADoc.class);
-						if (rva == null) {
-							up.setStatus("EXPIRED");
-						} else {
-							up.setStatus("UNPAID");
-						}
-						operatedList1.add(up);
-					}
-				}
-
-				// Filter By Status to Total Count
-				List<VARecordView> statusList1 = new LinkedList<VARecordView>();
-				for (VARecordView up : operatedList1) {
-					if (up.getStatus().equalsIgnoreCase(req.getBillingStatus())) {
-						statusList1.add(up);
-					}
-				}
-
-				loadVAByMemberResponse.setTotalRecords(statusList1.size());
-				loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-				loadVAByMemberResponse.setVaRecord(statusList);
+				listVA = baseRepository.getVirtualAccountRepository().loadVANonSubscribed(req, members);
+				loadVAByMemberResponse.setTotalRecords(
+						baseRepository.getVirtualAccountRepository().countVANonSubscribed(req, members));
 			}
+
+			loadVAByMemberResponse.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			loadVAByMemberResponse.setVaRecord(listVA);
 
 			return loadVAByMemberResponse;
 		} catch (TransactionException ex) {
@@ -984,68 +944,22 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 	public LoadVAByEventResponse loadVAByEvent(Holder<Header> headerParam, LoadVAByEventRequest req) {
 		LoadVAByEventResponse loadVAByEventRes = new LoadVAByEventResponse();
 		try {
-			List<VARecordView> listVA = virtualAccountValidation.validateLoadVAByEvent(headerParam.value.getToken(),
-					req);
-			List<VARecordView> countListVA = baseRepository.getVirtualAccountRepository()
-					.loadVAByEventID(req.getUsername(), req.getEventID());
+			List<VARecordView> listVA = new LinkedList<VARecordView>();
+			if (req.getEventID().equalsIgnoreCase("") || req.getEventID() == null) {
+				listVA = virtualAccountValidation.validateLoadVAByEvent(headerParam.value.getToken(), req);
 
-			loadVAByEventRes.setTotalRecords((long) countListVA.size());
+				loadVAByEventRes.setTotalRecords(baseRepository.getVirtualAccountRepository().countVAByEvent(req));
+			} else {
+				listVA = virtualAccountValidation.validateLoadVAByEvent(headerParam.value.getToken(), req);
+
+				loadVAByEventRes.setTotalRecords(baseRepository.getVirtualAccountRepository().countVAByEventID(req));
+			}
 			loadVAByEventRes.setVaRecord(listVA);
 			loadVAByEventRes.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return loadVAByEventRes;
 		} catch (TransactionException e) {
 			loadVAByEventRes.setStatus(StatusBuilder.getStatus(String.valueOf(e.getMessage())));
 			return loadVAByEventRes;
-		}
-	}
-
-	@Override
-	public LoadBillingStatusByMemberResponse loadBillingStatusByMember(Holder<Header> headerParam,
-			LoadBillingStatusByMemberRequest req) {
-		LoadBillingStatusByMemberResponse res = new LoadBillingStatusByMemberResponse();
-		try {
-			Members members = memberValidation.validateMember(req.getUsername(), true);
-			webserviceValidation.validateWebservice(headerParam.value.getToken());
-			// List PAID or PENDING Billing
-			List<VARecordView> vaPaidRecord = baseRepository.getVirtualAccountRepository().loadVAPaid(req, members);
-
-			// List UNPAID or EXPIRED Billing
-			List<VARecordView> vaUnpaidRecord = baseRepository.getVirtualAccountRepository().loadVAByMember(members,
-					req.getCurrentPage(), req.getPageSize());
-
-			// Remove PAID & PENDING Billing
-			List<VARecordView> operatedList = new LinkedList<VARecordView>();
-			for (VARecordView up : vaUnpaidRecord) {
-				boolean isFound = false;
-				for (VARecordView pd : vaPaidRecord) {
-					if (pd.getId().equals(up.getId()) && pd.isPersistent() == false) {
-						isFound = true;
-						break;
-					}
-				}
-				if (!isFound) {
-					RegisterVADoc rva = baseRepository.getPersistenceRepository()
-							.retrieve(new Query(Criteria.where("_id").is(up.getPaymentCode())), RegisterVADoc.class);
-					if (rva == null) {
-						up.setStatus("EXPIRED");
-					} else {
-						up.setStatus("UNPAID");
-					}
-					operatedList.add(up);
-				}
-			}
-
-			// All
-			operatedList.addAll(vaPaidRecord);
-
-			res.setVaRecord(operatedList);
-			res.setTotalRecords(baseRepository.getVirtualAccountRepository().loadVAByMemberID(members).size());
-			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-
-			return res;
-		} catch (TransactionException ex) {
-			res.setStatus(StatusBuilder.getStatus(String.valueOf(ex.getMessage())));
-			return res;
 		}
 	}
 }

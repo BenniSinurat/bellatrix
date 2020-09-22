@@ -25,6 +25,10 @@ public class VAInquiryResponse {
 	private BigDecimal finalAmount;
 	private BigDecimal totalFees;
 
+	private boolean subscribed;
+	private Integer billingCyle;
+	private Members membership;
+
 	private ResponseStatus status;
 
 	public ResponseStatus getStatus() {
@@ -169,6 +173,30 @@ public class VAInquiryResponse {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public Integer getBillingCyle() {
+		return billingCyle;
+	}
+
+	public void setBillingCyle(Integer billingCyle) {
+		this.billingCyle = billingCyle;
+	}
+
+	public Members getMembership() {
+		return membership;
+	}
+
+	public void setMembership(Members membership) {
+		this.membership = membership;
 	}
 
 }

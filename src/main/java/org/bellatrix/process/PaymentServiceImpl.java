@@ -75,7 +75,14 @@ public class PaymentServiceImpl implements Payment {
 		PaymentResponse pr = new PaymentResponse();
 		PaymentDetails pd = null;
 		try {
-			pd = paymentValidation.validatePayment(req, headerParam.value.getToken(), "PROCESSED");
+			String trxState = "";
+			logger.info("Status: " + req.getStatus() == null);
+			if(req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
+				trxState = "PROCESSED";
+			} else {
+				trxState = "PENDING";
+			}
+			pd = paymentValidation.validatePayment(req, headerParam.value.getToken(), trxState);
 			if (pd != null) {
 				List<Notifications> ln = baseRepository.getTransferTypeRepository()
 						.loadNotificationByTransferType(pd.getTransferType().getId());

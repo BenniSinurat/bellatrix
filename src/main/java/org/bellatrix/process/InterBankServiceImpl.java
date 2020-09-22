@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.xml.ws.Holder;
 
@@ -294,13 +293,16 @@ public class InterBankServiceImpl implements InterBank {
 			pr.setAccessTypeID(req.getAccessTypeID());
 			pr.setAmount(req.getAmount());
 			pr.setCredential(req.getCredential());
-			pr.setDescription(req.getDescription());
 			pr.setFromMember(req.getUsername());
 			pr.setToMember(bank.getFromUsername());
 			pr.setTraceNumber(req.getTraceNumber());
 			pr.setTransferTypeID(bank.getTransferTypeID());
 			pr.setReferenceNumber(req.getAccountNumber());
-			pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			if (req.getDescription().equalsIgnoreCase(null) || req.getDescription().equalsIgnoreCase("")) {
+				pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			} else {
+				pr.setDescription(req.getDescription());
+			}
 
 			/*
 			 * INSERT Pending Transfers
@@ -317,9 +319,14 @@ public class InterBankServiceImpl implements InterBank {
 			bankMap.put("username", req.getUsername());
 			bankMap.put("bankCode", bank.getBankCode());
 			bankMap.put("swiftCode", bank.getSwiftCode());
-			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString()); // Change finalAmount to
-																						// transactionAmount
-			bankMap.put("description", "Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			// Change finalAmount to transactionAmount field amount
+			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString()); 
+			if (req.getDescription().equalsIgnoreCase(null) || req.getDescription().equalsIgnoreCase("")) {
+				bankMap.put("description", "Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			} else {
+				bankMap.put("description", req.getDescription());
+			}
+			
 			bankMap.put("remark", req.getDescription());
 
 			if (!bank.getTransferMethod().equalsIgnoreCase("0")
@@ -542,10 +549,24 @@ public class InterBankServiceImpl implements InterBank {
 	@Override
 	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
 			SettlementTransferRequest req) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SettlementTransferResponse settlementTransferPayment(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**@Override
+	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
 		SettlementTransferResponse atr = new SettlementTransferResponse();
 		try {
 			IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
-			
+
 			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
 			bAccTrf.setAccountName(req.getAccountName());
 			bAccTrf.setAccountNumber(req.getAccountNumber());
@@ -553,7 +574,7 @@ public class InterBankServiceImpl implements InterBank {
 			bAccTrf.setTraceNumber(req.getTraceNumber());
 			bAccTrf.setUsername(req.getUsername());
 			bAccTrf.setDescription(req.getDescription());
-			
+
 			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
 			PaymentDetails pd = new PaymentDetails();
 			pd.setFromMember(bank.getFromMember());
@@ -591,7 +612,7 @@ public class InterBankServiceImpl implements InterBank {
 		SettlementTransferResponse atr = new SettlementTransferResponse();
 		IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
 		PaymentDetails pc = mapLrpcMap.get(req.getUsername() + req.getAccountNumber());
-		
+
 		try {
 			if (pc == null) {
 				atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
@@ -613,7 +634,7 @@ public class InterBankServiceImpl implements InterBank {
 			}
 
 			mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
-			
+
 			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
 			bAccTrf.setAccountName(req.getAccountName());
 			bAccTrf.setAccountNumber(req.getAccountNumber());
@@ -621,23 +642,25 @@ public class InterBankServiceImpl implements InterBank {
 			bAccTrf.setTraceNumber(req.getTraceNumber());
 			bAccTrf.setUsername(req.getUsername());
 			bAccTrf.setDescription(req.getDescription());
-			
+
 			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
 
 			PaymentRequest pr = new PaymentRequest();
 			pr.setAmount(req.getAmount());
-			pr.setDescription(req.getDescription());
 			pr.setFromMember(req.getUsername());
 			pr.setToMember(bank.getFromUsername());
 			pr.setTraceNumber(req.getTraceNumber());
 			pr.setTransferTypeID(bank.getTransferTypeID());
 			pr.setReferenceNumber(req.getAccountNumber());
-			pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
-
+			if (req.getDescription().equalsIgnoreCase(null)) {
+				pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+			} else {
+				pr.setDescription(req.getDescription());
+			}
 			/*
 			 * INSERT Pending Transfers
 			 */
-			PaymentDetails pd = paymentValidation.validatePayment(pr, headerParam.value.getToken(), "PENDING");
+			/*PaymentDetails pd = paymentValidation.validatePayment(pr, headerParam.value.getToken(), "PENDING");
 
 			Map<String, Object> bankMap = new HashMap<String, Object>();
 			bankMap.put("toAccountNumber", bank.getToAccountNumber());
@@ -693,6 +716,6 @@ public class InterBankServiceImpl implements InterBank {
 			atr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
 			return atr;
 		}
-	}
+	}**/
 
 }

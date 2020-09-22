@@ -33,6 +33,10 @@ public class VARecordView {
 	private VAEvent vaEvent;
 	private String description;
 
+	private boolean subscribed;
+	private Integer membershipID;
+	private Integer billingCycle;
+
 	public String getId() {
 		return id;
 	}
@@ -240,4 +244,29 @@ public class VARecordView {
 	public void setTransactionNumber(String transactionNumber) {
 		this.transactionNumber = transactionNumber;
 	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public Integer getMembershipID() {
+		return membershipID;
+	}
+
+	public void setMembershipID(Integer membershipID) {
+		this.membershipID = membershipID;
+	}
+
+	public Integer getBillingCycle() {
+		return billingCycle;
+	}
+
+	public void setBillingCycle(Integer billingCycle) {
+		this.billingCycle = billingCycle;
+	}
+
 }

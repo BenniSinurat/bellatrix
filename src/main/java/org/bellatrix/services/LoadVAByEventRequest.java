@@ -6,6 +6,9 @@ public class LoadVAByEventRequest {
 	private String eventID;
 	private Integer currentPage;
 	private Integer pageSize;
+	private String billingStatus;
+	private String fromDate;
+	private String toDate;
 
 	public String getUsername() {
 		return username;
@@ -37,6 +40,30 @@ public class LoadVAByEventRequest {
 
 	public void setPageSize(Integer pageSize) {
 		this.pageSize = pageSize;
+	}
+
+	public String getBillingStatus() {
+		return billingStatus;
+	}
+
+	public void setBillingStatus(String billingStatus) {
+		this.billingStatus = billingStatus;
+	}
+
+	public String getFromDate() {
+		return fromDate;
+	}
+
+	public void setFromDate(String fromDate) {
+		this.fromDate = fromDate;
+	}
+
+	public String getToDate() {
+		return toDate;
+	}
+
+	public void setToDate(String toDate) {
+		this.toDate = toDate;
 	}
 
 }

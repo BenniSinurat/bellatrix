@@ -7,6 +7,8 @@ public class LoadBillingStatusByMemberRequest {
 	private Integer pageSize;
 	private String fromDate;
 	private String toDate;
+	private boolean subscribed;
+	private String eventID;
 
 	public String getUsername() {
 		return username;
@@ -46,6 +48,22 @@ public class LoadBillingStatusByMemberRequest {
 
 	public void setToDate(String toDate) {
 		this.toDate = toDate;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public String getEventID() {
+		return eventID;
+	}
+
+	public void setEventID(String eventID) {
+		this.eventID = eventID;
 	}
 
 }

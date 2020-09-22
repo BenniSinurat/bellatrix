@@ -43,6 +43,11 @@ public class RegisterVADoc implements Serializable {
 	private FeeResult fees;
 	private VAEvent event;
 
+	private boolean subscribed;
+	private Integer billingCycle;
+	private Members membership;
+	private String status;
+
 	public String getId() {
 		return id;
 	}
@@ -233,6 +238,38 @@ public class RegisterVADoc implements Serializable {
 
 	public void setEvent(VAEvent event) {
 		this.event = event;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public Integer getBillingCycle() {
+		return billingCycle;
+	}
+
+	public void setBillingCycle(Integer billingCycle) {
+		this.billingCycle = billingCycle;
+	}
+
+	public Members getMembership() {
+		return membership;
+	}
+
+	public void setMembership(Members membership) {
+		this.membership = membership;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 }

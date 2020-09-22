@@ -8,8 +8,13 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.bellatrix.data.Billers;
+import org.bellatrix.data.Members;
 import org.bellatrix.data.PaymentChannel;
+import org.bellatrix.data.PaymentChannelPermissions;
+import org.bellatrix.data.TransactionException;
 import org.bellatrix.services.BillerRegisterRequest;
+import org.bellatrix.services.PaymentChannelPermissionRequest;
+import org.bellatrix.services.PaymentChannelRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,7 +30,8 @@ import com.mysql.jdbc.Statement;
 @Component
 @Repository
 public class BillPaymentRepository {
-
+	@Autowired
+	private MemberValidation memberValidation;
 	private JdbcTemplate jdbcTemplate;
 
 	public List<Billers> loadBillerFromMember(Integer memberID) {
@@ -142,6 +148,104 @@ public class BillPaymentRepository {
 							channel.setId(rs.getInt("id"));
 							channel.setName(rs.getString("name"));
 							return channel;
+						}
+					});
+			return channel;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public void createPaymentChannel(PaymentChannelRequest req) {
+		jdbcTemplate.update("insert into payment_channel (name, description) values (?, ?)", req.getName(),
+				req.getDescription());
+	}
+
+	public void updatePaymentChannel(PaymentChannelRequest req) {
+		jdbcTemplate.update("update payment_channel set name = ?, description = ? where id = ?", req.getName(),
+				req.getDescription(), req.getId());
+	}
+
+	public PaymentChannel findPaymentChannelByID(Integer id) {
+		try {
+			PaymentChannel channel = this.jdbcTemplate.queryForObject("select * from payment_channel where id = ?",
+					new Object[] { id }, new RowMapper<PaymentChannel>() {
+						public PaymentChannel mapRow(ResultSet rs, int rowNum) throws SQLException {
+							PaymentChannel channel = new PaymentChannel();
+							channel.setId(rs.getInt("id"));
+							channel.setName(rs.getString("name"));
+							channel.setDescription(rs.getString("description"));
+							return channel;
+						}
+					});
+			return channel;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public void createPaymentChannelPermission(PaymentChannelPermissionRequest req) {
+		try {
+			Members member = memberValidation.validateMember(req.getUsername(), true);
+
+			jdbcTemplate.update(
+					"insert into payment_channel_permissions (channel_id, member_id, transfer_type_id) values (?, ?, ?)",
+					req.getChannelID(), member.getId(), req.getTransferTypeID());
+		} catch (TransactionException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void updatePaymentChannelPermission(PaymentChannelPermissionRequest req) {
+		try {
+			Members member = memberValidation.validateMember(req.getUsername(), true);
+			jdbcTemplate.update(
+					"update payment_channel_permissions set channel_id = ?, member_id = ?, transfer_type_id = ? where id = ?",
+					req.getChannelID(), member.getId(), req.getTransferTypeID(), req.getId());
+		} catch (TransactionException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void deletePaymentChannelPermission(Integer id) {
+		jdbcTemplate.update("delete from payment_channel_permissions where id = ?", id);
+	}
+
+	public List<PaymentChannelPermissions> listPermissionByPaymentChannel(Integer id) {
+		try {
+			List<PaymentChannelPermissions> channel = this.jdbcTemplate.query(
+					"select cp.id, cp.channel_id, cp.transfer_type_id, t.name as transfer_type_name, cp.member_id, m.username, m.name from payment_channel_permissions cp inner join transfer_types t on t.id = cp.transfer_type_id inner join members m on m.id = cp.member_id where channel_id = ? and cp.enabled = true",
+					new Object[] { id }, new RowMapper<PaymentChannelPermissions>() {
+						public PaymentChannelPermissions mapRow(ResultSet rs, int rowNum) throws SQLException {
+							PaymentChannelPermissions p = new PaymentChannelPermissions();
+							p.setId(rs.getInt("id"));
+							p.setChannelID(rs.getInt("channel_id"));
+							p.setTransferTypeID(rs.getInt("transfer_type_id"));
+							p.setTransferTypeName(rs.getString("transfer_type_name"));
+							p.setMemberID(rs.getInt("member_id"));
+							p.setMemberName(rs.getString("name"));
+							p.setMemberUsername(rs.getString("username"));
+							return p;
+						}
+					});
+			return channel;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public List<PaymentChannel> listPaymentChannelByMemberID(Integer memberID) {
+		try {
+			List<PaymentChannel> channel = this.jdbcTemplate.query(
+					"select * from payment_channel p join payment_channel_permissions pc on p.id = pc.channel_id where member_id = ? and pc.enabled = true",
+					new Object[] { memberID }, new RowMapper<PaymentChannel>() {
+						public PaymentChannel mapRow(ResultSet rs, int rowNum) throws SQLException {
+							PaymentChannel p = new PaymentChannel();
+							p.setId(rs.getInt("id"));
+							p.setName(rs.getString("name"));
+							p.setDescription(rs.getString("description"));
+							p.setTransferTypeID(rs.getInt("transfer_type_id"));
+							return p;
 						}
 					});
 			return channel;

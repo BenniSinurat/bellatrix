@@ -43,7 +43,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 	</flow>
 
 	<flow name="virtualAccountNotificationFlow">
-		<vm:inbound-endpoint connector-ref="Notification_VM"
+		<vm:inbound-endpoint connector-ref="VA_Notification_VM"
 			exchange-pattern="one-way" path="va.notification" doc:name="VM" />
 		<logger level="INFO"
 			message="[VA Notification : #[message.inboundProperties.'NOTIFICATION_ORIGIN']/#[payload]]"

@@ -9,6 +9,8 @@ public class VADetails {
 	private String paymentCode;
 	private VirtualAccounts virtualAccount;
 
+	private Members membership;
+
 	public VirtualAccounts getVirtualAccount() {
 		return virtualAccount;
 	}
@@ -55,6 +57,14 @@ public class VADetails {
 
 	public void setPaymentCode(String paymentCode) {
 		this.paymentCode = paymentCode;
+	}
+
+	public Members getMembership() {
+		return membership;
+	}
+
+	public void setMembership(Members membership) {
+		this.membership = membership;
 	}
 
 }

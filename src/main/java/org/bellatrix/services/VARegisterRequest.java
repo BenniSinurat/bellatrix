@@ -30,6 +30,10 @@ public class VARegisterRequest implements Serializable {
 	private Date expiredDateTime;
 	private String callbackURL;
 
+	private boolean subscribed;
+	private Integer billingCycle;
+	private String membership; //membership username
+
 	public String getReferenceNumber() {
 		return referenceNumber;
 	}
@@ -156,6 +160,30 @@ public class VARegisterRequest implements Serializable {
 
 	public void setFromMember(String fromMember) {
 		this.fromMember = fromMember;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public Integer getBillingCycle() {
+		return billingCycle;
+	}
+
+	public void setBillingCycle(Integer billingCycle) {
+		this.billingCycle = billingCycle;
+	}
+
+	public String getMembership() {
+		return membership;
+	}
+
+	public void setMembership(String membership) {
+		this.membership = membership;
 	}
 
 }

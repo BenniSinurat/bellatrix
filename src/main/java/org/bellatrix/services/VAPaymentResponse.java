@@ -23,6 +23,10 @@ public class VAPaymentResponse {
 	private Date transactionDate;
 	private String description;
 
+	private boolean subscribed;
+	private Members membership;
+	private Integer billingCycle;
+
 	public ResponseStatus getStatus() {
 		return status;
 	}
@@ -141,6 +145,30 @@ public class VAPaymentResponse {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
+	}
+
+	public Members getMembership() {
+		return membership;
+	}
+
+	public void setMembership(Members membership) {
+		this.membership = membership;
+	}
+
+	public Integer getBillingCycle() {
+		return billingCycle;
+	}
+
+	public void setBillingCycle(Integer billingCycle) {
+		this.billingCycle = billingCycle;
 	}
 
 }

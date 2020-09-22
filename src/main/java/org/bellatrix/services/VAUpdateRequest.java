@@ -17,8 +17,13 @@ public class VAUpdateRequest implements Serializable {
 	private Boolean fullPayment;
 	private Boolean persistent;
 	private Long expiredAtMinute;
-
 	private String callbackURL;
+
+	private String msisdn;
+	private String email;
+	private String description;
+	
+	private String status;
 
 	public String getPaymentCode() {
 		return paymentCode;
@@ -92,4 +97,35 @@ public class VAUpdateRequest implements Serializable {
 		this.callbackURL = callbackURL;
 	}
 
+	public String getMsisdn() {
+		return msisdn;
+	}
+
+	public void setMsisdn(String msisdn) {
+		this.msisdn = msisdn;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
 }

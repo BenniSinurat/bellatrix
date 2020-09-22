@@ -8,6 +8,7 @@ public class LoadVAStatusByMemberRequest {
 	private String fromDate;
 	private String toDate;
 	private String billingStatus;
+	private boolean subscribed;
 
 	public String getUsername() {
 		return username;
@@ -55,6 +56,14 @@ public class LoadVAStatusByMemberRequest {
 
 	public void setBillingStatus(String billingStatus) {
 		this.billingStatus = billingStatus;
+	}
+
+	public boolean isSubscribed() {
+		return subscribed;
+	}
+
+	public void setSubscribed(boolean subscribed) {
+		this.subscribed = subscribed;
 	}
 
 }

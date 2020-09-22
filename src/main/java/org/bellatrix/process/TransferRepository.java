@@ -240,6 +240,11 @@ public class TransferRepository {
 		this.jdbcTemplate.update(
 				"update transfers set charged_back = true, transaction_state = 'REVERSED', reverse_by = ? where transaction_number = ? or parent_id = ?",
 				new Object[] { memberID, trxNo, trxNo });
+		int billingID = this.jdbcTemplate.queryForObject(
+				"select billing_id from transfers where transaction_number = ? or parent_id = ?", Integer.class, trxNo, trxNo);
+		if (billingID != 0) {
+			this.jdbcTemplate.update("update billing_status set status='REVERSED' where billing_id = ?", billingID);
+		}
 
 	}
 

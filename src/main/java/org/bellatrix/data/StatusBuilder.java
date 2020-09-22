@@ -113,9 +113,17 @@ public abstract class StatusBuilder {
 		case EMAIL_NOT_VERIFY:
 			return new ResponseStatus("E01", "EMAIL_NOT_VERIFY", "Please verify your email");
 		case KYC_REJECTED:
-			return new ResponseStatus("K01", "KYC_REJECTED", "Upgrade account has been rejected, please verify your data");
+			return new ResponseStatus("K01", "KYC_REJECTED",
+					"Upgrade account has been rejected, please verify your data");
 		case KYC_PENDING:
 			return new ResponseStatus("K02", "KYC_PENDING", "Upgrade account in process");
+		case TRANSACTION_COMPLETED:
+			return new ResponseStatus("T00", "TRANSACTION_COMPLETED", "Billing transaction complete");
+		case INVALID_PAYMENT_CHANNEL:
+			return new ResponseStatus("C01", "INVALID_PAYMENT_CHANNEL",
+					"Invalid payment channel/permission not allowed");
+		case BILLING_INACTIVE:
+			return new ResponseStatus("B15", "BILLING_INACTIVE", "Billing inactive");
 		default:
 			return new ResponseStatus("E99", "UNKNOWN_ERROR", "Unknown Error");
 		}

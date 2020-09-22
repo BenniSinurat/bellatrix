@@ -67,11 +67,6 @@ public interface VirtualAccount {
 	public void deleteVAEvent(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam DeleteVAEventRequest req) throws Exception;
 
-	/**@WebMethod(action = "loadVAByMemberStatus")
-	public LoadVAStatusByMemberResponse loadVAByMemberStatus(
-			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam LoadVAStatusByMemberRequest req);**/
-
 	@WebMethod(action = "updateStatusVA")
 	void updateBillingStatus(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam UpdateBillingStatusRequest req) throws Exception;
@@ -85,16 +80,16 @@ public interface VirtualAccount {
 			@WebParam ReportBillingRequest req) throws Exception;
 
 	@WebMethod(action = "loadVAByEvent")
-	public LoadVAByEventResponse loadVAByEvent(
-			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+	public LoadVAByEventResponse loadVAByEvent(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadVAByEventRequest req);
-
-	@WebMethod(action = "loadBillingStatusByMember")
-	public LoadBillingStatusByMemberResponse loadBillingStatusByMember(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
-			@WebParam LoadBillingStatusByMemberRequest req);
 
 	@WebMethod(action = "loadVAMemberByStatus")
 	public LoadVAStatusByMemberResponse loadVAMemberByStatus(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadVAStatusByMemberRequest req);
+
+	@WebMethod(action = "createEventStatus")
+	public CreateEventStatusResponse createEventStatus(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam CreateEventStatusRequest req);
 }

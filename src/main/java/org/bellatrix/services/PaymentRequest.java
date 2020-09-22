@@ -25,6 +25,7 @@ public class PaymentRequest implements Serializable {
 	private String originator;
 	private Date transactionDate;
 	private List<PaymentFields> paymentFields;
+	private String status;
 
 	public BigDecimal getAmount() {
 		return amount;
@@ -128,6 +129,14 @@ public class PaymentRequest implements Serializable {
 
 	public void setTransactionDate(Date transactionDate) {
 		this.transactionDate = transactionDate;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
 	}
 
 }
