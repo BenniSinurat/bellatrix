@@ -212,7 +212,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 				<expression-component doc:name="Expression">
 					<![CDATA[
 					regMap = new java.util.HashMap();
-					regMap['from']= 'noreply@optima.co.id';
+					regMap['from']= 'noreply@fello.id';
 					regMap['to']= flowVars['to'];
 					regMap['subject']= 'PAYMENT CODE';
 					regMap['body']= payload;
@@ -301,7 +301,7 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 			payload = regMap;]]>
 		</expression-component>
 		<jms:outbound-endpoint connector-ref="Active_MQ"
-			queue="notification.email" doc:name="JMS" />
+			queue="emoney.notification.email" doc:name="JMS" />
 	</flow>
 
 	<flow name="kycNotificationReject-process-configFlow">
@@ -322,6 +322,6 @@ http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/
 			payload = regMap;]]>
 		</expression-component>
 		<jms:outbound-endpoint connector-ref="Active_MQ"
-			queue="notification.email" doc:name="JMS" />
+			queue="emoney.notification.email" doc:name="JMS" />
 	</flow>
 </mule>

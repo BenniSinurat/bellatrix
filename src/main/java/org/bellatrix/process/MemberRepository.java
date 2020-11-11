@@ -200,6 +200,7 @@ public class MemberRepository {
 							members.setCreatedDate(rs.getTimestamp("created_date"));
 							members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
 							members.setEmailVerify(rs.getBoolean("email_verify"));
+							members.setUid(rs.getString("uid"));
 							return members;
 						}
 					});
@@ -376,13 +377,14 @@ public class MemberRepository {
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				PreparedStatement statement = con.prepareStatement(
-						"insert into members (group_id, name, username, email, msisdn) values (?, ?, ?, ?, ?)",
+						"insert into members (group_id, name, username, email, msisdn, uid) values (?, ?, ?, ?, ?, ?)",
 						Statement.RETURN_GENERATED_KEYS);
 				statement.setInt(1, members.getGroupID());
 				statement.setString(2, members.getName());
 				statement.setString(3, members.getUsername());
 				statement.setString(4, members.getEmail());
 				statement.setString(5, members.getMsisdn());
+				statement.setString(6, members.getUid());
 				return statement;
 			}
 		}, holder);
@@ -421,11 +423,11 @@ public class MemberRepository {
 	public void updateMembers(UpdateMemberRequest req) {
 		final UpdateMemberRequest members = req;
 		jdbcTemplate.update(
-				"update members set group_id = ?, name = ?, username = ?, email = ?, email_verify = ?, msisdn = ?, address = ?, id_card_no = ?, date_of_birth = ?, place_of_birth = ?, mother_maiden_name = ?, work = ?, sex = ?, nationality = ?  where id = ?",
+				"update members set group_id = ?, name = ?, username = ?, email = ?, email_verify = ?, msisdn = ?, address = ?, id_card_no = ?, date_of_birth = ?, place_of_birth = ?, mother_maiden_name = ?, work = ?, sex = ?, nationality = ?, uid = ?  where id = ?",
 				members.getGroupID(), members.getName(), members.getUsername(), members.getEmail(),
 				members.getEmailVerify(), members.getMsisdn(), members.getAddress(), members.getIdCardNo(),
 				members.getDateOfBirth(), members.getPlaceOfBirth(), members.getMotherMaidenName(), members.getWork(),
-				members.getSex(), members.getNationality(), members.getId());
+				members.getSex(), members.getNationality(), members.getUid(), members.getId());
 
 		if (members.getCustomFields() != null) {
 			jdbcTemplate.batchUpdate(

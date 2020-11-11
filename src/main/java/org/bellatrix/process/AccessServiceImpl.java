@@ -188,7 +188,7 @@ public class AccessServiceImpl implements Access {
 				 * SEND EMAIL HERE
 				 */
 				Notifications notif = new Notifications();
-				notif.setModuleURL("notification.email");
+				notif.setModuleURL("emoney.notification.email");
 				notif.setNotificationType("resetCredential");
 
 				List<Notifications> lm = new LinkedList<Notifications>();
@@ -202,7 +202,7 @@ public class AccessServiceImpl implements Access {
 				 * SEND SMS HERE
 				 */
 				Notifications notif = new Notifications();
-				notif.setModuleURL("notification.sms");
+				notif.setModuleURL("emoney.notification.sms");
 				notif.setNotificationType("resetCredentialOTP");
 
 				List<Notifications> lm = new LinkedList<Notifications>();

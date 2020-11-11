@@ -31,6 +31,8 @@ public class Members implements Serializable {
 	private List<MemberFields> customFields;
 	private List<ExternalMemberFields> externalMembers;
 	private List<Billers> billers;
+	
+	private String uid;
 
 	public String getName() {
 		return name;
@@ -202,6 +204,14 @@ public class Members implements Serializable {
 
 	public void setEmailVerify(Boolean emailVerify) {
 		this.emailVerify = emailVerify;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
 	}
 
 }

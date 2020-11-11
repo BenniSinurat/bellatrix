@@ -21,6 +21,8 @@ public class UpdateMemberRequest {
 	private String work;
 	private String sex;
 	private String nationality;
+	
+	private String uid;
 
 	private List<MemberFields> customFields;
 
@@ -150,5 +152,13 @@ public class UpdateMemberRequest {
 
 	public void setNationality(String nationality) {
 		this.nationality = nationality;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
 	}
 }

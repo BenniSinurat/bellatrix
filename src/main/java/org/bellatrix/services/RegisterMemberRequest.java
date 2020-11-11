@@ -15,6 +15,8 @@ public class RegisterMemberRequest {
 	private ExternalMemberFields externalMemberFields;
 	private List<MemberFields> customFields;
 
+	private String uid;
+	
 	public String getUsername() {
 		return username;
 	}
@@ -69,5 +71,13 @@ public class RegisterMemberRequest {
 
 	public void setExternalMemberFields(ExternalMemberFields externalMemberFields) {
 		this.externalMemberFields = externalMemberFields;
+	}
+
+	public String getUid() {
+		return uid;
+	}
+
+	public void setUid(String uid) {
+		this.uid = uid;
 	}
 }

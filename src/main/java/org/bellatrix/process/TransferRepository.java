@@ -237,13 +237,18 @@ public class TransferRepository {
 	}
 
 	public void reverseTransaction(Integer memberID, String trxNo) {
+		logger.info("Member ID: " + memberID + "/Trx No: " + trxNo);
 		this.jdbcTemplate.update(
 				"update transfers set charged_back = true, transaction_state = 'REVERSED', reverse_by = ? where transaction_number = ? or parent_id = ?",
 				new Object[] { memberID, trxNo, trxNo });
-		int billingID = this.jdbcTemplate.queryForObject(
-				"select billing_id from transfers where transaction_number = ? or parent_id = ?", Integer.class, trxNo, trxNo);
-		if (billingID != 0) {
-			this.jdbcTemplate.update("update billing_status set status='REVERSED' where billing_id = ?", billingID);
+		try {
+			int billingID = this.jdbcTemplate.queryForObject(
+					"select billing_id from transfers where transaction_number = ? or parent_id = ?", Integer.class, trxNo, trxNo);
+			if (billingID != 0) {
+				this.jdbcTemplate.update("update billing_status set status='REVERSED' where billing_id = ?", billingID);
+			}
+		} catch (NullPointerException e) {
+			logger.info("Billing ID IS NULL");
 		}
 
 	}
@@ -260,10 +265,20 @@ public class TransferRepository {
 		}
 	}
 
-	public void deletePendingTransfers(String transactionNumber) {
+	/*public void deletePendingTransfers(String transactionNumber) {
 		this.jdbcTemplate.update(
 				"delete from transfers where transaction_number = ? or parent_id = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber, transactionNumber });
+	}*/
+	
+	public void deletePendingTransfers(String transactionNumber) {
+		this.jdbcTemplate.update(
+				"update transfers set transaction_state = 'REVERSED' where transaction_number = ? and transaction_state = 'PENDING'",
+				new Object[] { transactionNumber });
+		
+		this.jdbcTemplate.update(
+				"update transfers set transaction_state = 'REVERSED' where parent_id = ? and transaction_state = 'PENDING'",
+				new Object[] { transactionNumber });
 	}
 
 	public void confirmPendingTransfers(String transactionNumber, String traceNumber, Integer wsID) {
@@ -288,8 +303,12 @@ public class TransferRepository {
 
 	public void confirmPendingTransfers(Integer id, String parentID, String refNo) {
 		this.jdbcTemplate.update(
-				"update  transfers set transaction_state = 'PROCESSED', reference_number = ? where id = ? or parent_id = ? and transaction_state = 'PENDING'",
-				new Object[] { refNo, id, parentID });
+				"update  transfers set transaction_state = 'PROCESSED', reference_number = ? where id = ? and transaction_state = 'PENDING'",
+				new Object[] { refNo, id });
+		
+		this.jdbcTemplate.update(
+				"update  transfers set transaction_state = 'PROCESSED', reference_number = ? where parent_id = ? and transaction_state = 'PENDING'",
+				new Object[] { refNo, parentID });
 	}
 
 	public void confirmPendingTransfers(String transactionNumber, String traceNumber, Integer wsID, String refNo) {

@@ -364,6 +364,10 @@ public class MemberServiceImpl implements Member {
 			if (req.getSex() == null) {
 				req.setSex(fromMember.getSex());
 			}
+			
+			if (req.getUid() == null) {
+				req.setUid(fromMember.getUid());
+			}
 
 			baseRepository.getMembersRepository().updateMembers(req);
 		} catch (DataIntegrityViolationException e) {
@@ -916,7 +920,7 @@ public class MemberServiceImpl implements Member {
 						accessRepository.createCredential(cReqKey);
 
 						Notifications notif = new Notifications();
-						notif.setModuleURL("notification.email");
+						notif.setModuleURL("emoney.notification.email");
 						notif.setNotificationType("registerPartner");
 
 						List<Notifications> lm = new LinkedList<Notifications>();
@@ -950,7 +954,7 @@ public class MemberServiceImpl implements Member {
 				 * SEND EMAIL HERE
 				 */
 				Notifications notif = new Notifications();
-				notif.setModuleURL("notification.email");
+				notif.setModuleURL("emoney.notification.email");
 				notif.setNotificationType("merchantRegister");
 
 				List<Notifications> lm = new LinkedList<Notifications>();

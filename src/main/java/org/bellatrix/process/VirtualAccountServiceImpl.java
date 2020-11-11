@@ -146,9 +146,9 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			var.setTicketID(ticketID);
 			var.setDescription(req.getDescription());
 			var.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-
+			
+			Date expired = req.getExpiredDateTime();
 			if (!req.isPersistent()) {
-				Date expired = req.getExpiredDateTime();
 				LocalDateTime timePoint = LocalDateTime.ofInstant(expired.toInstant(), ZoneId.systemDefault());
 				var.setExpiredAt(expired);
 				rva.setExpiredAt(timePoint);
@@ -159,7 +159,7 @@ public class VirtualAccountServiceImpl implements VirtualAccount {
 			/*
 			 * SAVE TO HAZELCAST
 			 */
-			Date expired = req.getExpiredDateTime();
+			//Date expired = req.getExpiredDateTime();
 			// mapRVAMap.put(vad.getPaymentCode(), rva,
 			// Utils.datetimeToLong(Utils.formatDate(expired)),
 			// TimeUnit.MILLISECONDS);

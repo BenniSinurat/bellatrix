@@ -256,9 +256,9 @@ public class VirtualAccountRepository {
 				expiredDate = Date.from(rva.getExpiredAt().atZone(ZoneId.systemDefault()).toInstant());
 				exd = Utils.formatDate(expiredDate);
 				id = this.jdbcTemplate.queryForObject(
-						"select id from billing_va where va_no = ? and member_id = ? and reference_no = ? and name = ? and email = ? and billing_state = 'ACTIVE' and fullpayment = ? and persistent = ? and bank_id = ? and DATE(expired_date) = DATE(?) and HOUR(expired_date) = HOUR(?) and MINUTE(expired_date) = MINUTE(?) and SECOND(expired_date) = SECOND(?)",
+						"select id from billing_va where va_no = ? and member_id = ? and reference_no = ? and name = ? and email = ? and billing_state = 'ACTIVE' and fullpayment = ? and persistent = ? and bank_id = ? and DATE(expired_date) = DATE(?) and HOUR(expired_date) = HOUR(?) and MINUTE(expired_date) = MINUTE(?)",
 						String.class, rva.getId(), rva.getMember().getId(), rva.getReferenceNumber(), rva.getName(),
-						rva.getEmail(), rva.isFullPayment(), rva.isPersistent(), rva.getBankID(), exd, exd, exd, exd);
+						rva.getEmail(), rva.isFullPayment(), rva.isPersistent(), rva.getBankID(), exd, exd, exd);
 			} else {
 				id = this.jdbcTemplate.queryForObject(
 						"select id from billing_va where va_no = ? and member_id = ? and reference_no = ? and name = ? and email = ? and billing_state = 'ACTIVE' and fullpayment = ? and persistent = ? and bank_id = ? and expired_date IS NULL",
