@@ -139,8 +139,18 @@ public class AccessServiceImpl implements Access {
 	public ResetCredentialResponse resetCredential(Holder<Header> headerParam, ResetCredentialRequest req) {
 		ResetCredentialResponse reset = new ResetCredentialResponse();
 		try {
+			String newPin = "";
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			Members member = memberValidation.validateMember(req.getUsername(), true);
+			
+			Groups group = baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID());
+			if(req.getNewCredential() == null || req.getNewCredential().equalsIgnoreCase("")) {
+				newPin = Utils.GenerateRandomNumber(group.getPinLength());
+			} else {
+				newPin = req.getNewCredential();
+			}
+
+			HashMap<String, Object> notifMap = new HashMap<String, Object>();
 
 			if (req.getUsernameMember() != null) {
 				Members user = memberValidation.validateMember(req.getUsernameMember(), true);
@@ -149,7 +159,30 @@ public class AccessServiceImpl implements Access {
 					if (req.getEmail().length() > 4) {
 						if (req.getEmail().equalsIgnoreCase(member.getEmail())) {
 							if (member.getEmailVerify().equals(false)) {
-								reset.setStatus(StatusBuilder.getStatus(Status.EMAIL_NOT_VERIFY));
+								/*
+								 * SEND SMS HERE
+								 */
+								Notifications notif = new Notifications();
+								notif.setModuleURL("emoney.notification.sms");
+								notif.setNotificationType("resetCredentialOTP");
+
+								List<Notifications> lm = new LinkedList<Notifications>();
+								lm.add(notif);
+
+								notifMap.put("notification", lm);
+								notifMap.put("msisdn", member.getMsisdn());
+								notifMap.put("pin", newPin);
+								
+								MuleClient client;
+								client = new MuleClient(configurator.getMuleContext());
+								Map<String, Object> header = new HashMap<String, Object>();
+								client.dispatch("NotificationVM", notifMap, header);
+
+								baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
+								baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
+								baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+
+								reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 								return reset;
 							}
 						} else {
@@ -165,11 +198,34 @@ public class AccessServiceImpl implements Access {
 					}
 				}
 			} else {
-				logger.info("[RESET BY: " + req.getUsernameMember() + "]");
+				logger.info("[RESET BY: " + req.getUsername() + "]");
 				if (req.getEmail().length() > 4) {
 					if (req.getEmail().equalsIgnoreCase(member.getEmail())) {
 						if (member.getEmailVerify().equals(false)) {
-							reset.setStatus(StatusBuilder.getStatus(Status.EMAIL_NOT_VERIFY));
+							/*
+							 * SEND SMS HERE
+							 */
+							Notifications notif = new Notifications();
+							notif.setModuleURL("emoney.notification.sms");
+							notif.setNotificationType("resetCredentialOTP");
+
+							List<Notifications> lm = new LinkedList<Notifications>();
+							lm.add(notif);
+
+							notifMap.put("notification", lm);
+							notifMap.put("msisdn", member.getMsisdn());
+							notifMap.put("pin", newPin);
+							
+							MuleClient client;
+							client = new MuleClient(configurator.getMuleContext());
+							Map<String, Object> header = new HashMap<String, Object>();
+							client.dispatch("NotificationVM", notifMap, header);
+
+							baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
+							baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
+							baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+
+							reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 							return reset;
 						}
 					} else {
@@ -179,10 +235,6 @@ public class AccessServiceImpl implements Access {
 				}
 			}
 
-			Groups group = baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID());
-			String newCredential = Utils.GenerateRandomNumber(group.getPinLength());
-
-			HashMap<String, Object> notifMap = new HashMap<String, Object>();
 			if (req.getEmail().length() > 4) {
 				/*
 				 * SEND EMAIL HERE
@@ -196,7 +248,7 @@ public class AccessServiceImpl implements Access {
 
 				notifMap.put("notification", lm);
 				notifMap.put("email", member.getEmail());
-				notifMap.put("pin", newCredential);
+				notifMap.put("pin", newPin);
 			} else {
 				/*
 				 * SEND SMS HERE
@@ -210,7 +262,7 @@ public class AccessServiceImpl implements Access {
 
 				notifMap.put("notification", lm);
 				notifMap.put("msisdn", member.getMsisdn());
-				notifMap.put("pin", newCredential);
+				notifMap.put("pin", newPin);
 			}
 
 			MuleClient client;
@@ -218,7 +270,7 @@ public class AccessServiceImpl implements Access {
 			Map<String, Object> header = new HashMap<String, Object>();
 			client.dispatch("NotificationVM", notifMap, header);
 
-			baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newCredential);
+			baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
 			baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
 			baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
 

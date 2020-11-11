@@ -6,6 +6,7 @@ public class ResetCredentialRequest {
 	private String usernameMember;
 	private String email;
 	private Integer accessTypeID;
+	private String newCredential;
 
 	public String getUsername() {
 		return username;
@@ -37,6 +38,14 @@ public class ResetCredentialRequest {
 
 	public void setAccessTypeID(Integer accessTypeID) {
 		this.accessTypeID = accessTypeID;
+	}
+
+	public String getNewCredential() {
+		return newCredential;
+	}
+
+	public void setNewCredential(String newCredential) {
+		this.newCredential = newCredential;
 	}
 
 }
