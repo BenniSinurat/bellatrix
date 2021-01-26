@@ -23,6 +23,7 @@ public class UpdateMemberRequest {
 	private String nationality;
 	
 	private String uid;
+	private String fcmID;
 
 	private List<MemberFields> customFields;
 
@@ -160,5 +161,13 @@ public class UpdateMemberRequest {
 
 	public void setUid(String uid) {
 		this.uid = uid;
+	}
+
+	public String getFcmID() {
+		return fcmID;
+	}
+
+	public void setFcmID(String fcmID) {
+		this.fcmID = fcmID;
 	}
 }

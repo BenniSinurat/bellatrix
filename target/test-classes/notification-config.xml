@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:management="http://www.mulesoft.org/schema/mule/management"
+	xmlns:jetty="http://www.mulesoft.org/schema/mule/jetty" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:vm="http://www.mulesoft.org/schema/mule/vm"
+	xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-current.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/jetty http://www.mulesoft.org/schema/mule/jetty/current/mule-jetty.xsd
+http://www.mulesoft.org/schema/mule/management http://www.mulesoft.org/schema/mule/management/current/mule-management.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd">
+
+
+	<flow name="notification-configFlow">
+		<vm:inbound-endpoint connector-ref="Notification_VM"
+			exchange-pattern="one-way" path="notification" doc:name="VM" />
+		<set-variable value="#[payload]" variableName="PaymentDetails"
+			doc:name="Variable" />
+		<foreach collection="payload.notification" doc:name="For Each">
+			<set-variable value="#[payload.notificationType]"
+				variableName="NotificationType" doc:name="Variable" />
+			<set-variable value="#[payload.moduleURL]" variableName="ModuleURL"
+				doc:name="Variable" />
+			<set-payload value="#[PaymentDetails]" doc:name="Set Payload" />
+			<vm:outbound-endpoint connector-ref="Notification_VM"
+				exchange-pattern="one-way" path="notification.process" doc:name="VM">
+				<set-property propertyName="NOTIFICATION_TYPE" value="#[NotificationType]" />
+				<set-property propertyName="NOTIFICATION_URL" value="#[ModuleURL]" />
+			</vm:outbound-endpoint>
+		</foreach>
+	</flow>
+
+
+	<flow name="notification-process-configFlow">
+		<vm:inbound-endpoint connector-ref="Notification_VM"
+			exchange-pattern="one-way" path="notification.process" doc:name="VM" />
+		<logger level="INFO"
+			message="[SENDING Notification for : #[message.inboundProperties.'NOTIFICATION_TYPE']]"
+			doc:name="Logger" />
+		<set-variable variableName="moduleURL"
+			value="#[message.inboundProperties.'NOTIFICATION_URL']" doc:name="Variable" />
+		<choice doc:name="Choice">
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'resetCredentialOTP']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Berikut pin baru Anda : ' + payload.pin + '. Silahkan langsung mengganti pin Anda.';
+					responseMap['to']= payload.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'requestPaymentConfirmation']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Gunakan OTP : ' + payload.otp + ' berlaku 15 menit';
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'requestTopup']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Gunakan kode transfer : ' + payload.referenceNumber + ' untuk melakukan Topup. Berlaku 1 jam';
+					responseMap['to']= payload.member.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'requestCashout']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Gunakan OTP : ' + payload.otp + ' untuk tarik tunai agen berlaku 15 menit';
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'defaultTrxReceipt']">
+				<set-variable value="#[payload.fromMember.email]"
+					variableName="to" doc:name="Variable" />
+				<parse-template location="DefaultTransactionReceipt.tmp"
+					mimeType="text/html" doc:name="Parse Template" />
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					regMap = new java.util.HashMap();
+					regMap['subject']= 'Transaction Receipt';
+					regMap['body']= payload;
+					regMap['to']= flowVars['to'];
+					regMap['from']= 'noreply@optima.co.id';
+					payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'resetCredential']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<parse-template location="ResetPIN.tmp" mimeType="text/html"
+					doc:name="Parse Template" />
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					regMap = new java.util.HashMap();
+					regMap['from']= 'noreply@optima.co.id';
+					regMap['to']= flowVars['to'];
+					regMap['subject']= 'RESET CREDENTIAL';
+					regMap['body']= payload ;
+					payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'successBankTransferConfirmation']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Transfer ' + payload.privateField['bankName']  + ' NoRek ' +  payload.privateField['accountNo'] + ' Rp.' + payload.privateField['trxAmount'] + ' BERHASIL. RefNo ' + payload.transactionNumber ;
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'failedBankTransferConfirmation']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Transfer ' + payload.privateField['bankName'] + ' NoRek ' +  payload.privateField['accountNo'] + ' Rp.' + payload.privateField['trxAmount'] + ' GAGAL. Transaksi dibatalkan';
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'topupFailedConfirmation']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Topup saldo ' +  payload.fromMember.username + ' GAGAL, hubungi Customer Service';
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'posNotification']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Transaksi ' +  payload.fromMember.username + ' Rp.' + payload.fees.finalAmount + ' BERHASIL, RefNo : ' + payload.transactionNumber;
+					responseMap['to']= payload.terminal.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'smsTrxNotification']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Transaksi ' +  payload.fromMember.username + ' Rp.' + payload.fees.finalAmount + ' BERHASIL, RefNo : ' + payload.transactionNumber;
+					responseMap['to']= payload.toMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'billingPayment']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<parse-template location="PaymentCodeInvoice.tmp"
+					mimeType="text/html" doc:name="Parse Template" />
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					regMap = new java.util.HashMap();
+					regMap['from']= 'noreply@fello.id';
+					regMap['to']= flowVars['to'];
+					regMap['subject']= 'PAYMENT CODE';
+					regMap['body']= payload;
+					payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'billingVAInvoice']">
+				<expression-component doc:name="Expression">
+					<![CDATA[
+					responseMap = new java.util.HashMap();
+					responseMap['text']= 'Anda memiliki tagihan ' + payload.paymentCode + ' sebesar ' + payload.amount + ' atas nama ' + payload.billingName + ' dengan masa berlaku hingga ' + payload.expiredAt + ';
+					responseMap['to']= payload.fromMember.msisdn;
+					responseMap['from']= 'noreply@optima.co.id';
+					payload = responseMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'merchantRegister']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<choice>
+					<when expression="#[payload['status'] == 'approved']">
+						<parse-template location="MerchantRegister.tmp"
+							mimeType="text/html" doc:name="Parse Template" />
+					</when>
+					<otherwise>
+						<parse-template location="MerchantRegisterReject.tmp"
+							mimeType="text/html" doc:name="Parse Template" />
+					</otherwise>
+				</choice>
+				<expression-component doc:name="Expression">
+					<![CDATA[regMap = new java.util.HashMap();
+						regMap['from']= 'noreply@optima.co.id';
+						regMap['to']= flowVars['to'];
+						regMap['subject']= 'Merchant Register';
+						regMap['body']= payload ;
+					payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="notification.email" doc:name="JMS" />
+			</when>
+			<when
+				expression="#[message.inboundProperties.'NOTIFICATION_TYPE' == 'registerPartner']">
+				<set-variable value="#[payload['email']]" variableName="to"
+					doc:name="Variable" />
+				<parse-template location="PartnerRegister.tmp"
+					mimeType="text/html" doc:name="Parse Template" />
+				<expression-component doc:name="Expression">
+                      <![CDATA[regMap = new java.util.HashMap();
+                             regMap['from']= 'noreply@info.narobil.id';
+                             regMap['to']= flowVars['to'];
+                             regMap['subject']= 'MERCHANT REGISTRATION';
+                             regMap['body']= payload ;
+                       payload = regMap;]]>
+				</expression-component>
+				<jms:outbound-endpoint connector-ref="Active_MQ"
+					queue="#[flowVars['moduleURL']]" doc:name="JMS" />
+			</when>
+			<otherwise>
+				<logger level="INFO"
+					message="[UNHANDLED Notification Type : #[message.inboundProperties.'NOTIFICATION_TYPE']]"
+					doc:name="Logger" />
+			</otherwise>
+		</choice>
+	</flow>
+
+	<flow name="kycNotification-process-configFlow">
+		<vm:inbound-endpoint connector-ref="Notification_VM"
+			exchange-pattern="one-way" path="kyc.notification.process" doc:name="VM" />
+		<set-variable value="#[payload]" variableName="to"
+			doc:name="Variable" />
+		<parse-template location="ProfileUpgrade.tmp" mimeType="text/html"
+			doc:name="Parse Template" />
+		<expression-component doc:name="Expression">
+			<![CDATA[
+			regMap = new java.util.HashMap();
+			regMap['from']= 'noreply@optima.co.id';
+			regMap['to']= flowVars['to'];
+			regMap['subject']= 'Profile Upgrade';
+			regMap['body']= payload ;
+			payload = regMap;]]>
+		</expression-component>
+		<jms:outbound-endpoint connector-ref="Active_MQ"
+			queue="emoney.notification.email" doc:name="JMS" />
+	</flow>
+
+	<flow name="kycNotificationReject-process-configFlow">
+		<vm:inbound-endpoint connector-ref="Notification_VM"
+			exchange-pattern="one-way" path="kyc.notification.reject.process"
+			doc:name="VM" />
+		<set-variable value="#[payload]" variableName="to"
+			doc:name="Variable" />
+		<parse-template location="ProfileUpgradeReject.tmp"
+			mimeType="text/html" doc:name="Parse Template" />
+		<expression-component doc:name="Expression">
+			<![CDATA[
+			regMap = new java.util.HashMap();
+			regMap['from']= 'noreply@optima.co.id';
+			regMap['to']= flowVars['to'];
+			regMap['subject']= 'Profile Upgrade';
+			regMap['body']= payload ;
+			payload = regMap;]]>
+		</expression-component>
+		<jms:outbound-endpoint connector-ref="Active_MQ"
+			queue="emoney.notification.email" doc:name="JMS" />
+	</flow>
+</mule>

@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.xml.ws.Holder;
@@ -115,9 +117,6 @@ public class MemberServiceImpl implements Member {
 					.loadFieldValuesByMemberID(members.getId());
 			List<Billers> billers = baseRepository.getBillPaymentRepository().loadBillerFromMember(members.getId());
 
-			Boolean kycStatus = baseRepository.getMembersRepository().approvalMemberKYCStatus(members.getId());
-
-			members.setKycStatus(kycStatus);
 			memberList.add(members);
 			members.setCustomFields(memberfields);
 			members.setExternalMembers(extID);
@@ -282,11 +281,11 @@ public class MemberServiceImpl implements Member {
 					.loadFieldValuesByUsername(req.getUsername());
 			List<Billers> billers = baseRepository.getBillPaymentRepository().loadBillerFromMember(members.getId());
 
-			Boolean kycStatus = baseRepository.getMembersRepository().approvalMemberKYCStatus(members.getId());
-			if (kycStatus == null) {
-				members.setKycStatus(false);
+			String status = baseRepository.getMembersRepository().memberKycStatus(members.getId());
+			if (status == null) {
+				members.setKycStatus("NOT_FOUND");
 			} else {
-				members.setKycStatus(kycStatus);
+				members.setKycStatus(status);
 			}
 
 			members.setCustomFields(memberfields);
@@ -327,6 +326,13 @@ public class MemberServiceImpl implements Member {
 
 			if (req.getName() == null) {
 				req.setName(fromMember.getName());
+			} else {
+				Pattern my_pattern = Pattern.compile("[^a-z ]", Pattern.CASE_INSENSITIVE);
+				Matcher my_match = my_pattern.matcher(req.getName());
+				boolean check = my_match.find();
+				if (check) {
+					throw new TransactionException(String.valueOf(Status.INVALID_NAME));
+				}
 			}
 
 			if (req.getMsisdn() == null) {
@@ -343,6 +349,13 @@ public class MemberServiceImpl implements Member {
 
 			if (req.getAddress() == null) {
 				req.setAddress(fromMember.getAddress());
+			} else {
+				Pattern my_pattern = Pattern.compile("[^a-z0-9 ]", Pattern.CASE_INSENSITIVE);
+				Matcher my_match = my_pattern.matcher(req.getAddress());
+				boolean check = my_match.find();
+				if (check) {
+					throw new TransactionException(String.valueOf(Status.INVALID_ADDRESS));
+				}
 			}
 
 			if (req.getPlaceOfBirth() == null) {
@@ -364,9 +377,13 @@ public class MemberServiceImpl implements Member {
 			if (req.getSex() == null) {
 				req.setSex(fromMember.getSex());
 			}
-			
+
 			if (req.getUid() == null) {
 				req.setUid(fromMember.getUid());
+			}
+
+			if (req.getFcmID() == null) {
+				req.setFcmID(fromMember.getFcmID());
 			}
 
 			baseRepository.getMembersRepository().updateMembers(req);

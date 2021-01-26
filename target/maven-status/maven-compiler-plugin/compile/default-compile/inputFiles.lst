@@ -283,6 +283,7 @@
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadTransferTypesByIDRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/BankView.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/process/MessageServiceImpl.java
+/Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/POSAcquiring.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/Terminal.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/process/BillPaymentServiceImpl.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/process/TransferTypeRepository.java
@@ -368,5 +369,6 @@
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/VADetails.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadFeesByTransferTypeRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/TransferTypesPermission.java
+/Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/PaymentRequestQRIS.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/AccessView.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadMessageByUsernameRequest.java

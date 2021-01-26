@@ -26,6 +26,9 @@ public class PaymentRequest implements Serializable {
 	private Date transactionDate;
 	private List<PaymentFields> paymentFields;
 	private String status;
+	
+	private String nnsID;
+	private String acquiringID;
 
 	public BigDecimal getAmount() {
 		return amount;
@@ -137,6 +140,22 @@ public class PaymentRequest implements Serializable {
 
 	public void setStatus(String status) {
 		this.status = status;
+	}
+
+	public String getNnsID() {
+		return nnsID;
+	}
+
+	public void setNnsID(String nnsID) {
+		this.nnsID = nnsID;
+	}
+
+	public String getAcquiringID() {
+		return acquiringID;
+	}
+
+	public void setAcquiringID(String acquiringID) {
+		this.acquiringID = acquiringID;
 	}
 
 }

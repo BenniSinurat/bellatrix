@@ -233,6 +233,7 @@ public class AccountServiceImpl implements Account {
 
 				//if (trf.get(i).getParentID() == null) {
 					TransferTypeFields typeField = new TransferTypeFields();
+					typeField.setId(trf.get(i).getTransferTypeID());
 					typeField.setFromAccounts(trf.get(i).getFromAccountID());
 					typeField.setToAccounts(trf.get(i).getToAccountID());
 					typeField.setName(trf.get(i).getName());

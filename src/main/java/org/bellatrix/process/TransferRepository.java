@@ -243,7 +243,7 @@ public class TransferRepository {
 				new Object[] { memberID, trxNo, trxNo });
 		try {
 			int billingID = this.jdbcTemplate.queryForObject(
-					"select billing_id from transfers where transaction_number = ? or parent_id = ?", Integer.class, trxNo, trxNo);
+					"select billing_id from transfers where transaction_number = ? and parent_id IS NULL", Integer.class, trxNo);
 			if (billingID != 0) {
 				this.jdbcTemplate.update("update billing_status set status='REVERSED' where billing_id = ?", billingID);
 			}
@@ -270,6 +270,16 @@ public class TransferRepository {
 				"delete from transfers where transaction_number = ? or parent_id = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber, transactionNumber });
 	}*/
+	
+	public void updatePendingTransfers(String transactionNumber) {
+		this.jdbcTemplate.update(
+				"update transfers set transaction_state = 'REVERSED' where transaction_number = ? and transaction_state = 'PENDING'",
+				new Object[] { transactionNumber });
+		
+		this.jdbcTemplate.update(
+				"update transfers set transaction_state = 'REVERSED' where parent_id = ? and transaction_state = 'PENDING'",
+				new Object[] { transactionNumber });
+	}
 	
 	public void deletePendingTransfers(String transactionNumber) {
 		this.jdbcTemplate.update(

@@ -22,9 +22,9 @@ public class BankTransferValidation {
 
 	public String validateAccountNo(Integer bankID, Integer memberID, String accountNo) throws TransactionException {
 		String name = baseRepository.getInterBankRepository().validateMemberBankAccountNo(bankID, memberID, accountNo);
-		if (name == null) {
-			throw new TransactionException(String.valueOf(Status.ACCOUNT_NOT_FOUND));
-		}
+		//if (name == null) {
+		//	throw new TransactionException(String.valueOf(Status.ACCOUNT_NOT_FOUND));
+		//}
 		return name;
 	}
 

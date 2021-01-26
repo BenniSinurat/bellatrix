@@ -36,6 +36,10 @@ public abstract class StatusBuilder {
 			return new ResponseStatus("M16", "MEMBER_ALREADY_REGISTERED", "Member already registered on system");
 		case DESTINATION_MEMBER_NOT_FOUND:
 			return new ResponseStatus("M15", "DESTINATION_MEMBER_NOT_FOUND", "Destination member not found on system");
+		case INVALID_ADDRESS:
+			return new ResponseStatus("M01", "INVALID_ADDRESS", "Special character found in address");
+		case INVALID_NAME:
+			return new ResponseStatus("M02", "INVALID_NAME", "Special character or numberic found in name");
 		case NO_TRANSACTION:
 			return new ResponseStatus("S84", "NO_TRANSACTION", "No transaction found for the specified account");
 		case INVALID_ACCOUNT:

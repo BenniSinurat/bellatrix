@@ -80,4 +80,5 @@ public class RegisterMemberRequest {
 	public void setUid(String uid) {
 		this.uid = uid;
 	}
+
 }

@@ -27,6 +27,7 @@ import org.bellatrix.services.GeneratePaymentTicketRequest;
 import org.bellatrix.services.LoadTerminalByUsernameRequest;
 import org.bellatrix.services.PaymentDetails;
 import org.bellatrix.services.PaymentRequest;
+import org.bellatrix.services.PaymentResponse;
 import org.bellatrix.services.Pos;
 import org.bellatrix.services.PosCreateInvoiceRequest;
 import org.bellatrix.services.PosCreateInvoiceResponse;
@@ -41,6 +42,7 @@ import org.bellatrix.services.UpdatePOSRequest;
 import org.mule.api.MuleException;
 import org.mule.module.client.MuleClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
@@ -448,6 +450,65 @@ public class PosServiceImpl implements Pos {
 	public void deletePOS(Holder<Header> headerParam, DeletePOSRequest req) throws Exception {
 		Terminal terminal = posPaymentValidation.validatePosTerminal(req, headerParam.value.getToken());
 		baseRepository.getPosRepository().deletePOS(req, terminal.getToMember().getId());
+	}
+	
+	@Override
+	@Transactional
+	public PaymentResponse doPaymentQRIS(Holder<Header> headerParam, PaymentRequest req) {
+		PaymentResponse pr = new PaymentResponse();
+		PaymentDetails pd = null;
+		try {
+			String trxState = "";
+			if(req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
+				trxState = "PROCESSED";
+			} else {
+				trxState = "PENDING";
+			}
+			pd = posPaymentValidation.validatePayment(req, headerParam.value.getToken(), trxState);
+			if (pd != null) {
+				List<Notifications> ln = baseRepository.getTransferTypeRepository()
+						.loadNotificationByTransferType(pd.getTransferType().getId());
+				pd.setNotification(ln);
+				MuleClient client = new MuleClient(configurator.getMuleContext());
+				Map<String, Object> header = new HashMap<String, Object>();
+				client.dispatch("NotificationVM", pd, header);
+			}
+
+			pr.setId(pd.getTransferID());
+			pr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			pr.setAmount(pd.getFees().getFinalAmount());
+			pr.setDescription(pd.getRequest().getDescription());
+			MemberView fromTransfer = new MemberView();
+			fromTransfer.setId(pd.getFromMember().getId());
+			fromTransfer.setName(pd.getFromMember().getName());
+			fromTransfer.setUsername(pd.getFromMember().getUsername());
+			pr.setFromMember(fromTransfer);
+			pr.setPaymentFields(pd.getRequest().getPaymentFields());
+			MemberView toTransfer = new MemberView();
+			toTransfer.setId(pd.getToMember().getId());
+			toTransfer.setName(pd.getToMember().getName());
+			toTransfer.setUsername(pd.getToMember().getUsername());
+			TransferTypeFields typeField = new TransferTypeFields();
+			typeField.setFromAccounts(pd.getFromAccount().getId());
+			typeField.setId(pd.getTransferType().getId());
+			typeField.setName(pd.getTransferType().getName());
+			typeField.setToAccounts(pd.getToAccount().getId());
+			pr.setTransferType(typeField);
+			pr.setToMember(toTransfer);
+			pr.setTraceNumber(pd.getRequest().getTraceNumber());
+			pr.setTransactionNumber(pd.getTransactionNumber());
+			return pr;
+
+		} catch (TransactionException e) {
+			pr.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return pr;
+		} catch (SocketTimeoutException ex) {
+			pr.setStatus(StatusBuilder.getStatus(Status.REQUEST_TIMEOUT));
+			return pr;
+		} catch (MuleException e) {
+			pr.setStatus(StatusBuilder.getStatus(Status.UNKNOWN_ERROR));
+			return pr;
+		}
 	}
 
 }

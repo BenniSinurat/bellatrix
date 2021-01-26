@@ -74,6 +74,8 @@ public class MemberRepository {
 							members.setWork(rs.getString("work"));
 							members.setSex(rs.getString("sex"));
 							members.setCreatedDate(rs.getTimestamp("created_date"));
+							members.setUid(rs.getString("uid"));
+							members.setFcmID(rs.getString("fcm_id"));
 							return members;
 						}
 					});
@@ -105,6 +107,8 @@ public class MemberRepository {
 				members.setWork(rs.getString("work"));
 				members.setSex(rs.getString("sex"));
 				members.setCreatedDate(rs.getTimestamp("created_date"));
+				members.setUid(rs.getString("uid"));
+				members.setFcmID(rs.getString("fcm_id"));
 				return members;
 			}
 		});
@@ -135,6 +139,8 @@ public class MemberRepository {
 									members.setCreatedDate(rs.getTimestamp("created_date"));
 									members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
 									members.setEmailVerify(rs.getBoolean("email_verify"));
+									members.setUid(rs.getString("uid"));
+									members.setFcmID(rs.getString("fcm_id"));
 									return members;
 								}
 							});
@@ -168,6 +174,8 @@ public class MemberRepository {
 							members.setSex(rs.getString("sex"));
 							members.setCreatedDate(rs.getTimestamp("created_date"));
 							members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
+							members.setUid(rs.getString("uid"));
+							members.setFcmID(rs.getString("fcm_id"));
 							return members;
 						}
 					});
@@ -179,7 +187,7 @@ public class MemberRepository {
 
 	public Members findOneMembers(String byField, Object id) {
 		try {
-			Members members = this.jdbcTemplate.queryForObject("select *  from members where " + byField + " = ?",
+			Members members = this.jdbcTemplate.queryForObject("select a.id, a.group_id, a.username, a.name, a.msisdn, a.email, a.email_verify, a.address, a.date_of_birth, a.place_of_birth, a.id_card_no, a.mother_maiden_name, a.nationality, a.work, a.sex, a.created_date, a.uid, a.fcm_id, (select status from member_kyc_request where member_id = a.id order by id desc limit 1) as kyc_status from members a where a." + byField + " = ?",
 					new Object[] { id }, new RowMapper<Members>() {
 						public Members mapRow(ResultSet rs, int rowNum) throws SQLException {
 							Members members = new Members();
@@ -201,6 +209,8 @@ public class MemberRepository {
 							members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
 							members.setEmailVerify(rs.getBoolean("email_verify"));
 							members.setUid(rs.getString("uid"));
+							members.setFcmID(rs.getString("fcm_id"));
+							members.setKycStatus(rs.getString("kyc_status"));
 							return members;
 						}
 					});
@@ -213,7 +223,7 @@ public class MemberRepository {
 	public List<Members> findMembersByExternalID(LoadMembersByExternalIDRequest req) {
 		try {
 			List<Members> members = this.jdbcTemplate.query(
-					"select a.id, a.group_id, a.username, a.name, a.msisdn, a.email, a.email_verify, a.address, a.date_of_birth, a.place_of_birth, a. id_card_no, a.mother_maiden_name, a.nationality, a.work, a.sex, a.created_date, (select  approved from member_kyc_request where member_id = a.id order by id desc limit 1) as kyc_status from members a join external_members b on a.id=b.member_id where b.parent_id=? and b.external_id=? ORDER BY id DESC",
+					"select a.id, a.group_id, a.username, a.name, a.msisdn, a.email, a.email_verify, a.address, a.date_of_birth, a.place_of_birth, a. id_card_no, a.mother_maiden_name, a.nationality, a.work, a.sex, a.created_date, a.uid, a.fcm_id, (select status from member_kyc_request where member_id = a.id order by id desc limit 1) as kyc_status from members a join external_members b on a.id=b.member_id where b.parent_id=? and b.external_id=? ORDER BY id DESC",
 					new Object[] { req.getPartnerID(), req.getExternalID() }, new RowMapper<Members>() {
 						public Members mapRow(ResultSet rs, int rowNum) throws SQLException {
 							Members members = new Members();
@@ -232,12 +242,9 @@ public class MemberRepository {
 							members.setNationality(rs.getString("nationality"));
 							members.setWork(rs.getString("work"));
 							members.setSex(rs.getString("sex"));
-							Boolean kyc = rs.getBoolean("kyc_status");
-							if (kyc) {
-								members.setKycStatus(true);
-							} else {
-								members.setKycStatus(false);
-							}
+							members.setUid(rs.getString("uid"));
+							members.setFcmID(rs.getString("fcm_id"));
+							members.setKycStatus(rs.getString("kyc_status"));
 							members.setCreatedDate(rs.getTimestamp("created_date"));
 							members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
 							return members;
@@ -252,7 +259,7 @@ public class MemberRepository {
 	public List<Members> loadMembersByExternalID(LoadMembersByExternalIDRequest req) {
 		try {
 			List<Members> members = this.jdbcTemplate.query(
-					"select a.id, a.group_id, a.username, a.name, a.msisdn, a.email, a.email_verify, a.address, a.date_of_birth, a.place_of_birth, a. id_card_no, a.mother_maiden_name, a.nationality, a.work, a.sex, a.created_date, (select  approved from member_kyc_request where member_id = a.id order by id desc limit 1) as kyc_status, b.parent_id, b.external_id, b.description from members a join external_members b on a.id=b.member_id where b.parent_id=? ORDER BY id DESC LIMIT ?,?",
+					"select a.id, a.group_id, a.username, a.name, a.msisdn, a.email, a.email_verify, a.address, a.date_of_birth, a.place_of_birth, a. id_card_no, a.mother_maiden_name, a.nationality, a.work, a.sex, a.created_date, a.uid, a.fcm_id, (select status from member_kyc_request where member_id = a.id order by id desc limit 1) as kyc_status, b.parent_id, b.external_id, b.description from members a join external_members b on a.id=b.member_id where b.parent_id=? ORDER BY id DESC LIMIT ?,?",
 					new Object[] { req.getPartnerID(), req.getCurrentPage(), req.getPageSize() },
 					new RowMapper<Members>() {
 						public Members mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -272,12 +279,9 @@ public class MemberRepository {
 							members.setNationality(rs.getString("nationality"));
 							members.setWork(rs.getString("work"));
 							members.setSex(rs.getString("sex"));
-							Boolean kyc = rs.getBoolean("kyc_status");
-							if (kyc) {
-								members.setKycStatus(true);
-							} else {
-								members.setKycStatus(false);
-							}
+							members.setUid(rs.getString("uid"));
+							members.setFcmID(rs.getString("fcm_id"));
+							members.setKycStatus(rs.getString("kyc_status"));
 							members.setCreatedDate(rs.getTimestamp("created_date"));
 							members.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
 							List<ExternalMemberFields> lext = new LinkedList<ExternalMemberFields>();
@@ -423,11 +427,11 @@ public class MemberRepository {
 	public void updateMembers(UpdateMemberRequest req) {
 		final UpdateMemberRequest members = req;
 		jdbcTemplate.update(
-				"update members set group_id = ?, name = ?, username = ?, email = ?, email_verify = ?, msisdn = ?, address = ?, id_card_no = ?, date_of_birth = ?, place_of_birth = ?, mother_maiden_name = ?, work = ?, sex = ?, nationality = ?, uid = ?  where id = ?",
+				"update members set group_id = ?, name = ?, username = ?, email = ?, email_verify = ?, msisdn = ?, address = ?, id_card_no = ?, date_of_birth = ?, place_of_birth = ?, mother_maiden_name = ?, work = ?, sex = ?, nationality = ?, uid = ?, fcm_id = ?  where id = ?",
 				members.getGroupID(), members.getName(), members.getUsername(), members.getEmail(),
 				members.getEmailVerify(), members.getMsisdn(), members.getAddress(), members.getIdCardNo(),
 				members.getDateOfBirth(), members.getPlaceOfBirth(), members.getMotherMaidenName(), members.getWork(),
-				members.getSex(), members.getNationality(), members.getUid(), members.getId());
+				members.getSex(), members.getNationality(), members.getUid(), members.getFcmID(), members.getId());
 
 		if (members.getCustomFields() != null) {
 			jdbcTemplate.batchUpdate(

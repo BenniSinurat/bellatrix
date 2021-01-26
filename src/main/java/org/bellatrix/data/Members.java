@@ -27,12 +27,14 @@ public class Members implements Serializable {
 	private String nationality;
 	private String work;
 	private String sex;
-	private Boolean kycStatus;
+	//private Boolean kycStatus;
+	private String kycStatus;
 	private List<MemberFields> customFields;
 	private List<ExternalMemberFields> externalMembers;
 	private List<Billers> billers;
 	
 	private String uid;
+	private String fcmID;
 
 	public String getName() {
 		return name;
@@ -106,13 +108,13 @@ public class Members implements Serializable {
 		this.externalMembers = externalMembers;
 	}
 
-	public Boolean getKycStatus() {
+	/*public Boolean getKycStatus() {
 		return kycStatus;
 	}
 
 	public void setKycStatus(Boolean kycStatus) {
 		this.kycStatus = kycStatus;
-	}
+	}*/
 
 	public List<Billers> getBillers() {
 		return billers;
@@ -212,6 +214,22 @@ public class Members implements Serializable {
 
 	public void setUid(String uid) {
 		this.uid = uid;
+	}
+
+	public String getFcmID() {
+		return fcmID;
+	}
+
+	public void setFcmID(String fcmID) {
+		this.fcmID = fcmID;
+	}
+
+	public String getKycStatus() {
+		return kycStatus;
+	}
+
+	public void setKycStatus(String kycStatus) {
+		this.kycStatus = kycStatus;
 	}
 
 }

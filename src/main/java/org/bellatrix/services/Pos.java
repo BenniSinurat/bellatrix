@@ -47,4 +47,8 @@ public interface Pos {
 	public PosPaymentResponse posPayment(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam PosPaymentRequest req) throws Exception;
 
+	@WebMethod(action = "doPaymentQRIS")
+	public PaymentResponse doPaymentQRIS(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam PaymentRequest req);
+
 }

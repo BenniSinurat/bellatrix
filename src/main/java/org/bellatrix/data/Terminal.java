@@ -17,6 +17,8 @@ public class Terminal {
 	private boolean openPayment;
 	private boolean fixedAmount;
 	private BigDecimal amount;
+	
+	private POSAcquiring posAcquiring;
 
 	public Integer getId() {
 		return id;
@@ -120,6 +122,14 @@ public class Terminal {
 
 	public void setEmail(String email) {
 		this.email = email;
+	}
+
+	public POSAcquiring getPosAcquiring() {
+		return posAcquiring;
+	}
+
+	public void setPosAcquiring(POSAcquiring posAcquiring) {
+		this.posAcquiring = posAcquiring;
 	}
 
 }
