@@ -60,13 +60,18 @@ public interface Payment {
 	@WebMethod(action = "reversePayment")
 	public ReversalResponse reversePayment(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam ReversalRequest req);
-	
+
 	@WebMethod(action = "merchantRequestPayment")
 	public RequestPaymentConfirmationResponse merchantRequestPayment(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam, @WebParam PaymentRequest req);
-	
+
 	@WebMethod(action = "merchantConfirmPayment")
-	public PaymentResponse merchantConfirmPayment(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+	public PaymentResponse merchantConfirmPayment(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam ConfirmPaymentRequest req);
+
+	@WebMethod(action = "updateTransfer")
+	public void updateTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam UpdateTransferRequest req) throws Exception;
 
 }

@@ -217,6 +217,32 @@ public class AccountRepository {
 			return null;
 		}
 	}
+	
+	public Accounts loadAccountByID(Integer accountID) {
+		try {
+			Accounts accounts = this.jdbcTemplate.queryForObject(
+					"select c.id, c.name, c.description, c.system_account, c.currency_id, c.created_date, b.name as currency_name from accounts c inner join currency b on c.currency_id = b.id where c.id = ?",
+					new Object[] { accountID }, new RowMapper<Accounts>() {
+						public Accounts mapRow(ResultSet rs, int rowNum) throws SQLException {
+							Accounts accounts = new Accounts();
+							accounts.setId(rs.getInt("id"));
+							Currencies currency = new Currencies();
+							currency.setId(rs.getInt("currency_id"));
+							currency.setName(rs.getString("currency_name"));
+							accounts.setCurrency(currency);
+							accounts.setName(rs.getString("name"));
+							accounts.setDescription(rs.getString("description"));
+							accounts.setSystemAccount(rs.getBoolean("system_account"));
+							accounts.setCreatedDate(rs.getTimestamp("created_date"));
+							accounts.setFormattedCreatedDate(Utils.formatDate(rs.getTimestamp("created_date")));
+							return accounts;
+						}
+					});
+			return accounts;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
 
 	public List<Accounts> loadAccounts(Integer currentPage, Integer pageSize) {
 		try {
@@ -310,7 +336,7 @@ public class AccountRepository {
 			Integer pageSize, String fromDate, String toDate, String orderBy, String orderType) {
 		try {
 			List<Transfers> transfer = this.jdbcTemplate.query(
-					"select -a.amount as amount, a.id, a.transfer_type_id, t.name, a.from_account_id, a.to_account_id, a.from_member_id, a.to_member_id, b.username as from_username, (select username from members where id=a.to_member_id) as to_username, b.name as from_name, (select name from members where id=a.to_member_id) as to_name, a.trace_number, a.transaction_number, a.description, a.transaction_state, a.transaction_date, a.modified_date, a.parent_id, a.charged_back, a.custom_field, a.reverse_by, (select username from members where id=a.reverse_by) as reverse_username, (select name from members where id=a.reverse_by) as reverse_name from transfers a join members b on a.from_member_id = b.id join transfer_types t on a.transfer_type_id = t.id where b.username=? and a.from_account_id=? and a.transaction_date between ? and ? union all select c.amount, c.id, c.transfer_type_id, r.name, c.from_account_id, c.to_account_id, c.from_member_id, c.to_member_id, (select username from members where id=c.from_member_id) as from_username, b.username as to_username, (select name from members where id=c.from_member_id) as from_name, b.name as to_name, c.trace_number, c.transaction_number, c.description, c.transaction_state, c.transaction_date, c.modified_date, c.parent_id, c.charged_back, c.custom_field, c.reverse_by, (select username from members where id=c.reverse_by) as reverse_username, (select name from members where id=c.reverse_by) as reverse_name from transfers c join members b on c.to_member_id = b.id join transfer_types r on c.transfer_type_id=r.id where b.username=? and c.to_account_id=? and c.transaction_date between ? and ? order by "
+					"select -a.amount as amount, a.id, a.transfer_type_id, t.name, a.from_account_id, a.to_account_id, a.from_member_id, a.to_member_id, b.username as from_username, (select username from members where id=a.to_member_id) as to_username, b.name as from_name, (select name from members where id=a.to_member_id) as to_name, a.trace_number, a.transaction_number, a.description, a.transaction_state, a.transaction_date, a.modified_date, a.parent_id, a.charged_back, a.custom_field, a.reverse_by, (select username from members where id=a.reverse_by) as reverse_username, (select name from members where id=a.reverse_by) as reverse_name, a.reference_number from transfers a join members b on a.from_member_id = b.id join transfer_types t on a.transfer_type_id = t.id where b.username=? and a.from_account_id=? and a.transaction_date between ? and ? union all select c.amount, c.id, c.transfer_type_id, r.name, c.from_account_id, c.to_account_id, c.from_member_id, c.to_member_id, (select username from members where id=c.from_member_id) as from_username, b.username as to_username, (select name from members where id=c.from_member_id) as from_name, b.name as to_name, c.trace_number, c.transaction_number, c.description, c.transaction_state, c.transaction_date, c.modified_date, c.parent_id, c.charged_back, c.custom_field, c.reverse_by, (select username from members where id=c.reverse_by) as reverse_username, (select name from members where id=c.reverse_by) as reverse_name, c.reference_number from transfers c join members b on c.to_member_id = b.id join transfer_types r on c.transfer_type_id=r.id where b.username=? and c.to_account_id=? and c.transaction_date between ? and ? order by "
 							+ orderBy + " " + orderType + " limit ?,?",
 					new Object[] { username, accountID, fromDate, toDate, username, accountID, fromDate, toDate,
 							currentPage, pageSize },
@@ -342,6 +368,7 @@ public class AccountRepository {
 							transfer.setReverseByName(rs.getString("reverse_name"));
 							transfer.setReverseByUsername(rs.getString("reverse_username"));
 							transfer.setCustomField(rs.getBoolean("custom_field"));
+							transfer.setReferenceNumber(rs.getString("reference_number"));
 							return transfer;
 						}
 					});

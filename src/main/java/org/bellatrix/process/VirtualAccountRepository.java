@@ -820,7 +820,8 @@ public class VirtualAccountRepository {
 	}
 
 	public void deleteVA(String ticketID) {
-		this.jdbcTemplate.update("delete from billing_va where ticket_id=?", ticketID);
+		//this.jdbcTemplate.update("delete from billing_va where ticket_id=?", ticketID);
+		this.jdbcTemplate.update("update billing_va set billing_state = 'DELETED' where ticket_id=?", ticketID);
 	}
 
 	public Integer countVAReport(Integer memberID) {

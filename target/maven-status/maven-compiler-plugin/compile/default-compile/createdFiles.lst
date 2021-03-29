@@ -18,6 +18,7 @@ org/bellatrix/services/VirtualAccount.class
 org/bellatrix/process/MemberRepository$19.class
 org/bellatrix/services/CustomField.class
 org/bellatrix/services/LoadVAByMemberResponse.class
+org/bellatrix/process/AccountRepository$10.class
 org/bellatrix/process/MemberRepository$14.class
 org/bellatrix/process/MenuRepository.class
 org/bellatrix/process/TransferTypeRepository$5.class
@@ -89,6 +90,7 @@ org/bellatrix/services/LoadPermissionByTransferTypesResponse.class
 org/bellatrix/services/TransferTypePermissionRequest.class
 org/bellatrix/process/JWTAuthCodecFilter.class
 org/bellatrix/services/LoadAccountTransferResponse.class
+org/bellatrix/services/UpdateTransferRequest.class
 org/bellatrix/services/LoadVAByIDRequest.class
 org/bellatrix/services/ConfirmBankAccountTransferRequest.class
 org/bellatrix/data/MessageRequest.class
@@ -178,6 +180,7 @@ org/bellatrix/process/GroupRepository$2.class
 org/bellatrix/process/PosRepository$1.class
 org/bellatrix/services/SettlementTransferRequest.class
 org/bellatrix/services/LoadCustomFieldsByIDRequest.class
+org/bellatrix/process/TransferTypeRepository$9.class
 org/bellatrix/process/CurrencyRepository$3.class
 org/bellatrix/process/BillPaymentRepository$6.class
 org/bellatrix/process/MessageRepository.class
@@ -390,6 +393,7 @@ org/bellatrix/services/BillInquiryRequest.class
 org/bellatrix/process/MemberRepository$8.class
 org/bellatrix/process/WebserviceRepository$5.class
 org/bellatrix/process/VirtualAccountRepository$18.class
+org/bellatrix/process/TransferRepository$7.class
 org/bellatrix/services/ConfirmMerchantResponse.class
 org/bellatrix/services/LoadVAByMemberRequest.class
 org/bellatrix/process/CustomFieldRepository$4.class
@@ -482,6 +486,7 @@ org/bellatrix/services/DeleteFeeRequest.class
 org/bellatrix/services/VAInquiryRequest.class
 org/bellatrix/data/ReportBillingResponse.class
 org/bellatrix/services/BankAccountTransferConfirmationRequest.class
+org/bellatrix/process/TransferTypeRepository$10.class
 org/bellatrix/services/LoadMembersResponse.class
 org/bellatrix/services/LoadTerminalByUsernameRequest.class
 org/bellatrix/services/LoadVAByEventRequest.class

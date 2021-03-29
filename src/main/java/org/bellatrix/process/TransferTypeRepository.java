@@ -45,6 +45,30 @@ public class TransferTypeRepository {
 		}
 	}
 
+	public List<TransferTypes> findTransferTypesByGroupID(Integer groupID) {
+		try {
+			List<TransferTypes> transferType = this.jdbcTemplate.query(
+					"select a.id, a.name, a.description, a.from_account_id, a.to_account_id, a.min_amount, a.max_amount, a.max_count, b.group_id from transfer_types a inner join transfer_type_permissions b on b.transfer_type_id = a.id where b.group_id = ?",
+					new Object[] { groupID }, new RowMapper<TransferTypes>() {
+						public TransferTypes mapRow(ResultSet rs, int rowNum) throws SQLException {
+							TransferTypes transferType = new TransferTypes();
+							transferType.setId(rs.getInt("id"));
+							transferType.setName(rs.getString("name"));
+							transferType.setDescription(rs.getString("description"));
+							transferType.setFromAccounts(rs.getInt("from_account_id"));
+							transferType.setToAccounts(rs.getInt("to_account_id"));
+							transferType.setMinAmount(rs.getBigDecimal("min_amount"));
+							transferType.setMaxAmount(rs.getBigDecimal("max_amount"));
+							transferType.setMaxCount(rs.getInt("max_count"));
+							return transferType;
+						}
+					});
+			return transferType;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
 	public TransferTypes findTransferTypeByGroupID(Integer id, Integer groupID) {
 		try {
 			TransferTypes transferType = this.jdbcTemplate.queryForObject(
@@ -143,10 +167,16 @@ public class TransferTypeRepository {
 				new Object[] { accountID });
 		return count;
 	}
-	
-	public Integer countTotalTransferTypes() {
+
+	public Integer countTotalTransferTypesByGroupID(Integer groupId) {
 		int count = this.jdbcTemplate.queryForObject(
-				"select count(id) from transfer_types", Integer.class);
+				"select count(t.id) from transfer_types t inner join transfer_type_permissions tt on tt.transfer_type_id = t.id where tt.group_id = ? ",
+				Integer.class, new Object[] { groupId });
+		return count;
+	}
+
+	public Integer countTotalTransferTypes() {
+		int count = this.jdbcTemplate.queryForObject("select count(id) from transfer_types", Integer.class);
 		return count;
 	}
 
@@ -174,6 +204,39 @@ public class TransferTypeRepository {
 						}
 					});
 			return notif;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public List<Fees> getListFeeFromTransferTypeID(Integer transferTypeID) {
+		try {
+			List<Fees> fees = this.jdbcTemplate.query("select * from fees where transfer_type_id = ?",
+					new Object[] { transferTypeID }, new RowMapper<Fees>() {
+						public Fees mapRow(ResultSet rs, int rowNum) throws SQLException {
+							Fees fees = new Fees();
+							fees.setId(rs.getInt("id"));
+							fees.setTransferTypeID(rs.getInt("transfer_type_id"));
+							fees.setFromMemberID(rs.getInt("from_member_id"));
+							fees.setToMemberID(rs.getInt("to_member_id"));
+							fees.setFromAccountID(rs.getInt("from_account_id"));
+							fees.setToAccountID(rs.getInt("to_account_id"));
+							fees.setName(rs.getString("name"));
+							fees.setDescription(rs.getString("description"));
+							fees.setDeductAmount(rs.getBoolean("deduct_amount"));
+							fees.setFixedAmount(rs.getBigDecimal("fixed_amount"));
+							fees.setPercentageValue(rs.getBigDecimal("percentage_value"));
+							fees.setInitialRangeAmount(rs.getBigDecimal("initial_range_amount"));
+							fees.setMaximumRangeAmount(rs.getBigDecimal("maximum_range_amount"));
+							fees.setFromAllGroup(rs.getBoolean("from_all_group"));
+							fees.setToAllGroup(rs.getBoolean("to_all_group"));
+							fees.setStartDate(rs.getDate("start_date"));
+							fees.setEndDate(rs.getDate("end_date"));
+							fees.setEnabled(rs.getBoolean("enabled"));
+							return fees;
+						}
+					});
+			return fees;
 		} catch (EmptyResultDataAccessException e) {
 			return null;
 		}
@@ -262,7 +325,7 @@ public class TransferTypeRepository {
 				"update transfer_types set from_account_id = ?, to_account_id = ?, name = ?, description = ?, min_amount = ?, max_amount = ?, max_count = ? where id = ?",
 				fromAccountID, toAccountID, name, description, min, max, maxCount, id);
 	}
-	
+
 	public List<TransferTypesPermission> listPermissionByTransferType(Integer id) {
 		try {
 			List<TransferTypesPermission> transferType = this.jdbcTemplate.query(
@@ -283,10 +346,9 @@ public class TransferTypeRepository {
 			return null;
 		}
 	}
-	
+
 	public void updatePermissionTransferType(LoadPermissionByTransferTypesRequest req) {
-		jdbcTemplate.update(
-				"update transfer_type_permissions set transfer_type_id = ?, group_id = ? where id = ?",
+		jdbcTemplate.update("update transfer_type_permissions set transfer_type_id = ?, group_id = ? where id = ?",
 				req.getTransferTypeID(), req.getGroupID(), req.getId());
 	}
 
@@ -296,8 +358,7 @@ public class TransferTypeRepository {
 	}
 
 	public void deleteTransferTypePermission(Integer id) {
-		jdbcTemplate.update("delete from transfer_type_permissions where id = ?",
-				id);
+		jdbcTemplate.update("delete from transfer_type_permissions where id = ?", id);
 	}
 
 	public void createFee(FeeRequest req) {
@@ -311,15 +372,15 @@ public class TransferTypeRepository {
 
 	public void updateFee(FeeRequest req) {
 		jdbcTemplate.update(
-				"update fees set from_member_id = ?, from_account_id = ?, to_member_id = ?, to_account_id = ?, name = ?, description = ?, enabled = ?, deduct_amount = ?, from_all_group = ?, to_all_group = ?, fixed_amount = ?, percentage_value = ?, initial_range_amount = ?, maximum_range_amount = ?, start_date = ? , end_date = ? where transfer_type_id = ?",
+				"update fees set from_member_id = ?, from_account_id = ?, to_member_id = ?, to_account_id = ?, name = ?, description = ?, enabled = ?, deduct_amount = ?, from_all_group = ?, to_all_group = ?, fixed_amount = ?, percentage_value = ?, initial_range_amount = ?, maximum_range_amount = ?, start_date = ? , end_date = ? where id = ? and transfer_type_id = ?",
 				req.getFromMemberID(), req.getFromAccountID(), req.getToMemberID(), req.getToAccountID(), req.getName(),
 				req.getDescription(), req.isEnabled(), req.isDeductAmount(), req.isFromAllGroup(), req.isToAllGroup(),
 				req.getFixedAmount(), req.getPercentage(), req.getInitialRangeAmount(), req.getMaxRangeAmount(),
-				req.getStartDate(), req.getEndDate(), req.getTransferTypeID());
+				req.getStartDate(), req.getEndDate(), req.getId(), req.getTransferTypeID());
 	}
 
-	public void deleteFee(Integer transferTypeID) {
-		jdbcTemplate.update("delete from fees where transfer_type_id = ?", transferTypeID);
+	public void deleteFee(Integer id, Integer transferTypeID) {
+		jdbcTemplate.update("delete from fees where id = ? and transfer_type_id = ?", id, transferTypeID);
 	}
 
 	@Autowired

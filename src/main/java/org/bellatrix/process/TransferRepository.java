@@ -22,6 +22,7 @@ import org.bellatrix.data.PaymentFields;
 import org.bellatrix.data.TransferTypes;
 import org.bellatrix.data.Transfers;
 import org.bellatrix.services.PaymentRequest;
+import org.bellatrix.services.UpdateTransferRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -243,7 +244,8 @@ public class TransferRepository {
 				new Object[] { memberID, trxNo, trxNo });
 		try {
 			int billingID = this.jdbcTemplate.queryForObject(
-					"select billing_id from transfers where transaction_number = ? and parent_id IS NULL", Integer.class, trxNo);
+					"select billing_id from transfers where transaction_number = ? and parent_id IS NULL",
+					Integer.class, trxNo);
 			if (billingID != 0) {
 				this.jdbcTemplate.update("update billing_status set status='REVERSED' where billing_id = ?", billingID);
 			}
@@ -265,27 +267,28 @@ public class TransferRepository {
 		}
 	}
 
-	/*public void deletePendingTransfers(String transactionNumber) {
-		this.jdbcTemplate.update(
-				"delete from transfers where transaction_number = ? or parent_id = ? and transaction_state = 'PENDING'",
-				new Object[] { transactionNumber, transactionNumber });
-	}*/
-	
+	/*
+	 * public void deletePendingTransfers(String transactionNumber) {
+	 * this.jdbcTemplate.update(
+	 * "delete from transfers where transaction_number = ? or parent_id = ? and transaction_state = 'PENDING'"
+	 * , new Object[] { transactionNumber, transactionNumber }); }
+	 */
+
 	public void updatePendingTransfers(String transactionNumber) {
 		this.jdbcTemplate.update(
 				"update transfers set transaction_state = 'REVERSED' where transaction_number = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber });
-		
+
 		this.jdbcTemplate.update(
 				"update transfers set transaction_state = 'REVERSED' where parent_id = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber });
 	}
-	
+
 	public void deletePendingTransfers(String transactionNumber) {
 		this.jdbcTemplate.update(
 				"update transfers set transaction_state = 'REVERSED' where transaction_number = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber });
-		
+
 		this.jdbcTemplate.update(
 				"update transfers set transaction_state = 'REVERSED' where parent_id = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber });
@@ -297,8 +300,9 @@ public class TransferRepository {
 				"update  transfers set transaction_state = 'PROCESSED' where transaction_number = ? and trace_number = ? and transaction_state = 'PENDING'",
 				new Object[] { transactionNumber, trNo });
 	}
-	
-	public void merchantConfirmPendingTransfers(String transactionNumber, String traceNumber, Integer wsID, BigDecimal amount) {
+
+	public void merchantConfirmPendingTransfers(String transactionNumber, String traceNumber, Integer wsID,
+			BigDecimal amount) {
 		String trNo = String.valueOf(wsID) + traceNumber;
 		this.jdbcTemplate.update(
 				"update  transfers set transaction_state = 'PROCESSED', amount = ? where transaction_number = ? and trace_number = ? and transaction_state = 'PENDING'",
@@ -315,7 +319,7 @@ public class TransferRepository {
 		this.jdbcTemplate.update(
 				"update  transfers set transaction_state = 'PROCESSED', reference_number = ? where id = ? and transaction_state = 'PENDING'",
 				new Object[] { refNo, id });
-		
+
 		this.jdbcTemplate.update(
 				"update  transfers set transaction_state = 'PROCESSED', reference_number = ? where parent_id = ? and transaction_state = 'PENDING'",
 				new Object[] { refNo, parentID });
@@ -335,6 +339,43 @@ public class TransferRepository {
 		} catch (EmptyResultDataAccessException e) {
 			return 0;
 		}
+	}
+
+	public Transfers findOneTransfers(String byField, Object id) {
+		try {
+			Transfers transfers = this.jdbcTemplate.queryForObject("select * from transfers where " + byField + " = ?",
+					new Object[] { id }, new RowMapper<Transfers>() {
+						public Transfers mapRow(ResultSet rs, int rowNum) throws SQLException {
+							Transfers transfers = new Transfers();
+							transfers.setAmount(rs.getBigDecimal("amount"));
+							transfers.setChargedBack(rs.getBoolean("charged_back"));
+							transfers.setDescription(rs.getString("description"));
+							transfers.setFromAccountID(rs.getInt("from_account_id"));
+							transfers.setFromMemberID(rs.getInt("from_member_id"));
+							transfers.setId(rs.getInt("id"));
+							transfers.setModifiedDate(rs.getTimestamp("modified_date"));
+							transfers.setParentID(rs.getString("parent_id"));
+							transfers.setToAccountID(rs.getInt("to_account_id"));
+							transfers.setToMemberID(rs.getInt("to_member_id"));
+							transfers.setTraceNumber(rs.getString("trace_number"));
+							transfers.setTransactionDate(rs.getTimestamp("transaction_date"));
+							transfers.setTransactionNumber(rs.getString("transaction_number"));
+							transfers.setTransactionState(rs.getString("transaction_state"));
+							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
+							transfers.setReferenceNumber(rs.getString("reference_number"));
+							return transfers;
+						}
+					});
+			return transfers;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+	
+	public void updateTransfers(UpdateTransferRequest req) {
+		this.jdbcTemplate.update(
+				"update  transfers set transaction_state = ?, reference_number = ?, description = ? where id = ?",
+				new Object[] { req.getTransactionState(),req.getReferenceNumber(), req.getDescription(), req.getTransferID() });
 	}
 
 	@Autowired

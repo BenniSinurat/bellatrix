@@ -43,11 +43,13 @@ import org.bellatrix.services.ReversalRequest;
 import org.bellatrix.services.ReversalResponse;
 import org.bellatrix.services.TransactionStatusRequest;
 import org.bellatrix.services.TransactionStatusResponse;
+import org.bellatrix.services.UpdateTransferRequest;
 import org.bellatrix.services.ValidatePaymentTicketRequest;
 import org.bellatrix.services.ValidatePaymentTicketResponse;
 import org.mule.api.MuleException;
 import org.mule.module.client.MuleClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -67,6 +69,8 @@ public class PaymentServiceImpl implements Payment {
 	private Configurator configurator;
 	@Autowired
 	private MemberValidation memberValidation;
+	@Autowired
+	private WebserviceValidation webserviceValidation;
 	private Logger logger = Logger.getLogger(PaymentServiceImpl.class);
 
 	@Override
@@ -77,7 +81,7 @@ public class PaymentServiceImpl implements Payment {
 		try {
 			String trxState = "";
 			logger.info("Status: " + req.getStatus() == null);
-			if(req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
+			if (req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
 				trxState = "PROCESSED";
 			} else {
 				trxState = "PENDING";
@@ -222,18 +226,18 @@ public class PaymentServiceImpl implements Payment {
 		if (pc == null) {
 			pr.setStatus(StatusBuilder.getStatus(Status.OTP_EXPIRED));
 			return pr;
-		} 
-		
+		}
+
 		/*
-		* Validate Amount
-		*/
-		if(req.getAmount().compareTo(pc.getFees().getFinalAmount()) == 1) {
+		 * Validate Amount
+		 */
+		if (req.getAmount().compareTo(pc.getFees().getFinalAmount()) == 1) {
 			pr.setStatus(StatusBuilder.getStatus(Status.INVALID_AMOUNT));
 			return pr;
 		}
-		//cek finalamount - totalamount
-		//kalo minus atau positif
-		
+		// cek finalamount - totalamount
+		// kalo minus atau positif
+
 		/*
 		 * Evict Cache Now
 		 */
@@ -464,7 +468,7 @@ public class PaymentServiceImpl implements Payment {
 		GeneratePaymentTicketResponse gtr = new GeneratePaymentTicketResponse();
 		GeneratePaymentTicketRequest gtm = new GeneratePaymentTicketRequest();
 		try {
-			gtm =  paymentValidation.validatePaymentRequest(headerParam.value.getToken(), req);
+			gtm = paymentValidation.validatePaymentRequest(headerParam.value.getToken(), req);
 			String ticket = UUID.randomUUID().toString();
 			IMap<String, GeneratePaymentTicketRequest> genMap = instance.getMap("GeneratePaymentMap");
 			genMap.put(ticket, gtm);
@@ -596,7 +600,8 @@ public class PaymentServiceImpl implements Payment {
 			}
 
 			Transfers mainTransfers = listMainTransfers.get(0);
-			baseRepository.getTransferRepository().reverseTransaction(member.getId(), mainTransfers.getTransactionNumber());
+			baseRepository.getTransferRepository().reverseTransaction(member.getId(),
+					mainTransfers.getTransactionNumber());
 			rr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return rr;
 
@@ -800,6 +805,29 @@ public class PaymentServiceImpl implements Payment {
 			mapCashout.delete(key);
 			return confirmAgentCashoutResponse;
 		}
+	}
+
+	@Override
+	public void updateTransfer(Holder<Header> headerParam, UpdateTransferRequest req) throws Exception {
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			Transfers t = paymentValidation.validatePaymentTransferID(req);
+			if(req.getReferenceNumber() == null) {
+				req.setReferenceNumber(t.getReferenceNumber());
+			}
+			
+			if(req.getDescription() == null) {
+				req.setDescription(t.getDescription());
+			}
+			
+			if(req.getTransactionState() == null) {
+				req.setTransactionState(t.getTransactionState());
+			}
+			baseRepository.getTransferRepository().updateTransfers(req);
+		} catch (DataIntegrityViolationException e) {
+			throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
+		}
+
 	}
 
 }

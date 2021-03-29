@@ -82,7 +82,7 @@ public class AccountServiceImpl implements Account {
 						currency.getTrailer()));
 				accountResponse.setAccount(accounts);
 			} else {
-				Accounts accounts = accountValidation.validateAccount(req.getId(), req.getGroupID());
+				Accounts accounts = baseRepository.getAccountRepository().loadAccountByID(req.getId());
 				if (accounts == null) {
 					accountResponse.setStatus(StatusBuilder.getStatus(Status.ACCOUNT_NOT_FOUND));
 					return accountResponse;
@@ -255,6 +255,7 @@ public class AccountServiceImpl implements Account {
 				trfHistory.setFormattedTransactionDate(trf.get(i).getFormattedTransactionDate());
 				trfHistory.setTransactionNumber(trf.get(i).getTransactionNumber());
 				trfHistory.setTransactionState(trf.get(i).getTransactionState());
+				trfHistory.setReferenceNumber(trf.get(i).getReferenceNumber());
 				lth.add(trfHistory);
 			}
 

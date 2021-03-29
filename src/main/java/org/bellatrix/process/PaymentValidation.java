@@ -25,6 +25,7 @@ import org.bellatrix.services.InquiryRequest;
 import org.bellatrix.services.InquiryResponse;
 import org.bellatrix.services.PaymentDetails;
 import org.bellatrix.services.PaymentRequest;
+import org.bellatrix.services.UpdateTransferRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -717,5 +718,13 @@ public class PaymentValidation {
 				member.getId());
 
 		return member;
+	}
+	
+	public Transfers validatePaymentTransferID(UpdateTransferRequest req) throws TransactionException {
+		Transfers transfer = baseRepository.getTransferRepository().findOneTransfers("id", req.getTransferID());
+		if (transfer == null) {
+				throw new TransactionException(String.valueOf(Status.PAYMENT_NOT_FOUND));
+		}
+		return transfer;
 	}
 }

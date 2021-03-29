@@ -22,6 +22,7 @@ public class TransferHistory {
 	private Date transactionDate;
 	private String formattedTransactionDate;
 	private List<PaymentFields> customFields;
+	private String referenceNumber;
 
 	public Date getTransactionDate() {
 		return transactionDate;
@@ -149,6 +150,14 @@ public class TransferHistory {
 
 	public void setFormattedTransactionDate(String formattedTransactionDate) {
 		this.formattedTransactionDate = formattedTransactionDate;
+	}
+
+	public String getReferenceNumber() {
+		return referenceNumber;
+	}
+
+	public void setReferenceNumber(String referenceNumber) {
+		this.referenceNumber = referenceNumber;
 	}
 
 }

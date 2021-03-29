@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 public class FeeRequest {
-
+	private Integer id;
 	private Integer transferTypeID;
 	private Integer fromMemberID;
 	private Integer fromAccountID;
@@ -157,6 +157,14 @@ public class FeeRequest {
 
 	public void setEndDate(Date endDate) {
 		this.endDate = endDate;
+	}
+
+	public Integer getId() {
+		return id;
+	}
+
+	public void setId(Integer id) {
+		this.id = id;
 	}
 
 }

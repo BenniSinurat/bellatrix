@@ -1,5 +1,6 @@
 package org.bellatrix.process;
 
+import java.util.LinkedList;
 import java.util.List;
 import javax.xml.ws.Holder;
 
@@ -51,19 +52,22 @@ public class TransferTypeServiceImpl implements TransferType {
 		LoadTransferTypesResponse tt = new LoadTransferTypesResponse();
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			List<TransferTypes> transferTypes = new LinkedList<TransferTypes>();
+			Integer totalRecords = 0;
 			if (req.getCurrentPage() == null || req.getPageSize() == null) {
-				req.setCurrentPage(0);
-				req.setPageSize(0);
+				transferTypes = baseRepository.getTransferTypeRepository().findTransferTypesByGroupID(req.getGroupID());
+				totalRecords = baseRepository.getTransferTypeRepository().countTotalTransferTypesByGroupID(req.getGroupID());
+			} else {
+				transferTypes = baseRepository.getTransferTypeRepository()
+						.loadAllTransferTypes(req.getCurrentPage(), req.getPageSize());
+				totalRecords = baseRepository.getTransferTypeRepository().countTotalTransferTypes();
 			}
-			List<TransferTypes> transferTypes = baseRepository.getTransferTypeRepository().loadAllTransferTypes(req.getCurrentPage(), req.getPageSize());
-
-			Integer totalRecords = baseRepository.getTransferTypeRepository().countTotalTransferTypes();
 			tt.setTransferTypesList(transferTypes);
 			tt.setTotalRecords(totalRecords);
 			tt.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-			
+
 			return tt;
-		}catch(Exception e) {
+		} catch (Exception e) {
 			tt.setStatus(StatusBuilder.getStatus(e.getMessage()));
 			return tt;
 		}
@@ -127,7 +131,7 @@ public class TransferTypeServiceImpl implements TransferType {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			transferTypeValidation.validateTransferType(req.getId());
-			List<Fees> fees = baseRepository.getTransferTypeRepository().getFeeFromTransferTypeID(req.getId());
+			List<Fees> fees = baseRepository.getTransferTypeRepository().getListFeeFromTransferTypeID(req.getId());
 			lfbt.setFees(fees);
 			lfbt.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 		} catch (Exception e) {
@@ -176,9 +180,10 @@ public class TransferTypeServiceImpl implements TransferType {
 			throw new TransactionException(e.getMessage());
 		}
 	}
-	
+
 	@Override
-	public void updateTransferTypePermission(Holder<Header> headerParam, LoadPermissionByTransferTypesRequest req) throws TransactionException {
+	public void updateTransferTypePermission(Holder<Header> headerParam, LoadPermissionByTransferTypesRequest req)
+			throws TransactionException {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			transferTypeValidation.validateTransferType(req.getTransferTypeID());
@@ -226,12 +231,12 @@ public class TransferTypeServiceImpl implements TransferType {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			transferTypeValidation.validateTransferType(req.getTransferTypeID());
-			baseRepository.getTransferTypeRepository().deleteFee(req.getTransferTypeID());
+			baseRepository.getTransferTypeRepository().deleteFee(req.getId(), req.getTransferTypeID());
 		} catch (Exception e) {
 			throw new TransactionException(e.getMessage());
 		}
 	}
-	
+
 	@Override
 	public LoadPermissionByTransferTypesResponse loadPermissionsByTransferType(Holder<Header> headerParam,
 			LoadPermissionByTransferTypesRequest req) {
@@ -239,7 +244,8 @@ public class TransferTypeServiceImpl implements TransferType {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			transferTypeValidation.validateTransferType(req.getTransferTypeID());
-			List<TransferTypesPermission> transferTypePermission = baseRepository.getTransferTypeRepository().listPermissionByTransferType(req.getTransferTypeID());
+			List<TransferTypesPermission> transferTypePermission = baseRepository.getTransferTypeRepository()
+					.listPermissionByTransferType(req.getTransferTypeID());
 			tid.setTransferTypePermissions(transferTypePermission);
 			tid.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 		} catch (Exception e) {

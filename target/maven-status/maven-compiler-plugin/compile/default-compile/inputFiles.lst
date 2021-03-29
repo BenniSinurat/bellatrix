@@ -223,6 +223,7 @@
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadWSByIDRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/BankTransfers.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadCustomFieldsByInternalNameRequest.java
+/Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/UpdateTransferRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadPermissionByWebServicesResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/PaymentResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/Message.java

@@ -35,6 +35,8 @@ public class Transfers {
 	private Integer reverseByID;
 	private String reverseByUsername;
 	private String reverseByName;
+	
+	private String referenceNumber;
 
 	public Date getTransactionDate() {
 		return transactionDate;
@@ -242,6 +244,14 @@ public class Transfers {
 
 	public void setFormattedTransactionDate(String formattedTransactionDate) {
 		this.formattedTransactionDate = formattedTransactionDate;
+	}
+
+	public String getReferenceNumber() {
+		return referenceNumber;
+	}
+
+	public void setReferenceNumber(String referenceNumber) {
+		this.referenceNumber = referenceNumber;
 	}
 
 }
