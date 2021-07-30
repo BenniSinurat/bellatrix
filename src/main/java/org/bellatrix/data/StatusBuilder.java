@@ -59,10 +59,15 @@ public abstract class StatusBuilder {
 			return new ResponseStatus("S22", "INSUFFICIENT_BALANCE",
 					"You dont have enough balance to process this transaction");
 		case CREDIT_LIMIT_REACHED:
-			return new ResponseStatus("S40", "CREDIT_LIMIT_REACHED", "Your monthly account limit has reached");
+			return new ResponseStatus("S40", "CREDIT_LIMIT_REACHED", "Your account limit has reached");
+		case MONTHLY_CREDIT_LIMIT_REACHED:
+			return new ResponseStatus("S42", "MONTHLY_CREDIT_LIMIT_REACHED", "Your monthly account limit has reached");
 		case DESTINATION_CREDIT_LIMIT_REACHED:
 			return new ResponseStatus("S41", "DESTINATION_CREDIT_LIMIT_REACHED",
-					"The destination monthly limit has reached");
+					"The destination account limit has reached");
+		case MONTHLY_DESTINATION_CREDIT_LIMIT_REACHED:
+			return new ResponseStatus("S43", "MONTHLY_DESTINATION_CREDIT_LIMIT_REACHED",
+					"The destination monthly account limit has reached");
 		case BALANCE_LIMIT_REACHED:
 			return new ResponseStatus("S44", "BALANCE_LIMIT_REACHED", "You have reached your max balance limit");
 		case INVALID_TRANSFER_TYPE:
@@ -128,6 +133,8 @@ public abstract class StatusBuilder {
 					"Invalid payment channel/permission not allowed");
 		case BILLING_INACTIVE:
 			return new ResponseStatus("B15", "BILLING_INACTIVE", "Billing inactive");
+		case SCHEDULED_TRANSFER_NOT_FOUND:
+			return new ResponseStatus("SH14", "SCHEDULED_TRANSFER_NOT_FOUND", "The specified schedule transfer not found");
 		default:
 			return new ResponseStatus("E99", "UNKNOWN_ERROR", "Unknown Error");
 		}

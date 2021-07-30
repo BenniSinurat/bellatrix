@@ -10,6 +10,7 @@ org/bellatrix/services/LoadTransferTypesByIDRequest.class
 org/bellatrix/services/LoadTransferTypesResponse.class
 org/bellatrix/process/TransferRepository$4.class
 org/bellatrix/services/BalanceInquiryRequest.class
+org/bellatrix/services/LoadScheduleTransferByIDResponse.class
 org/bellatrix/process/MemberServiceImpl.class
 org/bellatrix/services/LoadGroupsByIDRequest.class
 org/bellatrix/services/LoadMembersByUsernameRequest.class
@@ -27,6 +28,7 @@ org/bellatrix/process/AccountRepository$8.class
 org/bellatrix/data/ParentMenu.class
 org/bellatrix/services/SettlementTransferResponse.class
 org/bellatrix/process/BillPaymentRepository$2.class
+org/bellatrix/process/InterBankRepository$7.class
 org/bellatrix/services/LoadMembersByExternalIDRequest.class
 org/bellatrix/services/LoadPermissionByPaymentChannelResponse.class
 org/bellatrix/services/PaymentChannelPermissionRequest.class
@@ -97,11 +99,13 @@ org/bellatrix/data/MessageRequest.class
 org/bellatrix/services/LoadCustomFieldsRequest.class
 org/bellatrix/data/MerchantBusinessScale.class
 org/bellatrix/process/MemberRepository$22.class
+org/bellatrix/services/UpdateScheduleTransfer.class
 org/bellatrix/services/LoadAccountPermissionsRequest.class
 org/bellatrix/services/RegisterAccountTransferRequest.class
 org/bellatrix/services/BankAccountTransferResponse.class
 org/bellatrix/process/CustomFieldRepository$7.class
 org/bellatrix/services/ValidateKYCResponse.class
+org/bellatrix/data/ScheduleTransfer.class
 org/bellatrix/data/BillerServiceFieldView.class
 org/bellatrix/process/VirtualAccountRepository$13.class
 org/bellatrix/process/AccessCredentialValidation.class
@@ -167,6 +171,7 @@ org/bellatrix/data/Currencies.class
 org/bellatrix/services/AuthResponse.class
 org/bellatrix/process/MemberRepository$24.class
 org/bellatrix/process/TransferTypeRepository$3.class
+org/bellatrix/services/CreateScheduleTransferRequest.class
 org/bellatrix/services/PaymentConfirmationRequest.class
 org/bellatrix/process/AccountRepository$6.class
 org/bellatrix/data/PaymentChannelPermissions.class
@@ -224,6 +229,7 @@ org/bellatrix/services/LoadMerchantCategoryResponse.class
 org/bellatrix/process/TransferTypeRepository$7.class
 org/bellatrix/services/LoadVAByIDResponse.class
 org/bellatrix/services/PosPaymentRequest.class
+org/bellatrix/services/LoadScheduleTransferByUsernameRequest.class
 org/bellatrix/services/UpdatePOSRequest.class
 org/bellatrix/services/RegisterMemberRequest.class
 org/bellatrix/process/CurrencyRepository$2.class
@@ -309,6 +315,7 @@ org/bellatrix/services/LoadPermissionByPaymentChannelRequest.class
 org/bellatrix/services/ConfirmKYCRequest.class
 org/bellatrix/data/Billers.class
 org/bellatrix/data/NotificationMessage.class
+org/bellatrix/process/InterBankRepository$8.class
 org/bellatrix/process/TransferRepository$3.class
 org/bellatrix/process/BillPaymentRepository$3.class
 org/bellatrix/process/MemberRepository$18.class
@@ -330,6 +337,7 @@ org/bellatrix/services/PosPaymentResponse.class
 org/bellatrix/services/LoadVAStatusByMemberRequest.class
 org/bellatrix/process/AccountRepository$9.class
 org/bellatrix/services/TransactionHistoryRequest.class
+org/bellatrix/services/DeleteScheduleTransferRequest.class
 org/bellatrix/services/AccountsPermissionResponse.class
 org/bellatrix/services/BalanceInquiryResponse.class
 org/bellatrix/services/LoadMenuByGroupsRequest.class
@@ -413,6 +421,7 @@ org/bellatrix/process/AccessRepository$4.class
 org/bellatrix/process/VirtualAccountRepository$1.class
 org/bellatrix/process/VirtualAccountRepository$20.class
 org/bellatrix/services/LoadAccountsByGroupsResponse.class
+org/bellatrix/services/LoadScheduleTransferByUsernameResponse.class
 org/bellatrix/process/VirtualAccountRepository$17.class
 org/bellatrix/services/LoadMerchantBusinessScaleResponse.class
 org/bellatrix/services/ConfirmPaymentRequest.class
@@ -441,6 +450,7 @@ org/bellatrix/process/WebserviceImpl.class
 org/bellatrix/services/GeneratePaymentTicketResponse.class
 org/bellatrix/process/GlobalConfigRepository$1.class
 org/bellatrix/process/InterBankServiceImpl.class
+org/bellatrix/services/LoadScheduleTransferByIDRequest.class
 org/bellatrix/data/MerchantCategory.class
 org/bellatrix/process/CustomFieldRepository$5.class
 org/bellatrix/services/LoadMerchantCategoryRequest.class
@@ -483,6 +493,7 @@ org/bellatrix/process/MemberRepository$6.class
 org/bellatrix/process/CustomFieldRepository$3.class
 org/bellatrix/process/VirtualAccountRepository$23.class
 org/bellatrix/services/DeleteFeeRequest.class
+org/bellatrix/process/InterBankRepository$6.class
 org/bellatrix/services/VAInquiryRequest.class
 org/bellatrix/data/ReportBillingResponse.class
 org/bellatrix/services/BankAccountTransferConfirmationRequest.class

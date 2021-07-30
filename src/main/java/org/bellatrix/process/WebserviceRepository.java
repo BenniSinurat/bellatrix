@@ -92,6 +92,8 @@ public class WebserviceRepository {
 							ws.setId(rs.getInt("id"));
 							ws.setUsername(rs.getString("username"));
 							ws.setName(rs.getString("name"));
+							ws.setActive(rs.getBoolean("active"));
+							ws.setSecureTransaction(rs.getBoolean("credentials"));
 							return ws;
 						}
 					});

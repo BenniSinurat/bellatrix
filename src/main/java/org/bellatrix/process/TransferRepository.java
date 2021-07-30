@@ -65,6 +65,7 @@ public class TransferRepository {
 							transfers.setTransactionNumber(rs.getString("transaction_number"));
 							transfers.setTransactionState(rs.getString("transaction_state"));
 							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
+							transfers.setReferenceNumber(rs.getString("reference_number"));
 							return transfers;
 						}
 					});
@@ -372,10 +373,14 @@ public class TransferRepository {
 		}
 	}
 	
-	public void updateTransfers(UpdateTransferRequest req) {
+	public void updateTransfers(UpdateTransferRequest req, String trxNo) {
 		this.jdbcTemplate.update(
-				"update  transfers set transaction_state = ?, reference_number = ?, description = ? where id = ?",
+				"update transfers set transaction_state = ?, reference_number = ?, description = ? where id = ?",
 				new Object[] { req.getTransactionState(),req.getReferenceNumber(), req.getDescription(), req.getTransferID() });
+		
+		this.jdbcTemplate.update(
+				"update transfers set transaction_state = ? where parent_id = ?",
+				new Object[] { req.getTransactionState(), trxNo });
 	}
 
 	@Autowired

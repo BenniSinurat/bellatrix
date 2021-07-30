@@ -668,6 +668,7 @@ public class PaymentServiceImpl implements Payment {
 				trfHistory.setTransactionState(trf.get(i).getTransactionState());
 				trfHistory.setTransactionDate(trf.get(i).getTransactionDate());
 				trfHistory.setTransactionNumber(trf.get(i).getTransactionNumber());
+				trfHistory.setReferenceNumber(trf.get(i).getReferenceNumber());
 				lth.add(trfHistory);
 			}
 
@@ -823,7 +824,7 @@ public class PaymentServiceImpl implements Payment {
 			if(req.getTransactionState() == null) {
 				req.setTransactionState(t.getTransactionState());
 			}
-			baseRepository.getTransferRepository().updateTransfers(req);
+			baseRepository.getTransferRepository().updateTransfers(req, t.getTransactionNumber());
 		} catch (DataIntegrityViolationException e) {
 			throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
 		}

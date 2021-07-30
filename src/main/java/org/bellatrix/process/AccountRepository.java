@@ -320,8 +320,11 @@ public class AccountRepository {
 
 	public BigDecimal loadUpperCreditLimitBalance(String username, Integer accountID) {
 		try {
-			BigDecimal balance = jdbcTemplate.queryForObject(
+			/**BigDecimal balance = jdbcTemplate.queryForObject(
 					"select sum(amount) as journal from transfers join members on members.id = transfers.to_member_id where members.username = ? and transfers.to_account_id = ? and transfers.charged_back = false and YEAR(transaction_date) = YEAR(NOW()) AND MONTH(transaction_date)=MONTH(NOW());",
+					new Object[] { username, accountID }, BigDecimal.class);*/
+			BigDecimal balance = jdbcTemplate.queryForObject(
+					"select sum(amount) as journal from transfers join members on members.id = transfers.from_member_id where members.username = ? and transfers.from_account_id = ? and transfers.charged_back = false and YEAR(transaction_date) = YEAR(NOW()) AND MONTH(transaction_date)=MONTH(NOW());",
 					new Object[] { username, accountID }, BigDecimal.class);
 			if (balance == null) {
 				return BigDecimal.ZERO;

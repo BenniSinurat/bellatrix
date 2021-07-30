@@ -12,6 +12,7 @@ public class BankAccountTransferResponse {
 	private String traceNumber;
 	private String accountName;
 	private String accountNumber;
+	private String bankCode;
 	private String bankName;
 	private BigDecimal finalAmount;
 	private BigDecimal totalFees;
@@ -105,6 +106,14 @@ public class BankAccountTransferResponse {
 
 	public void setTwoFactorAuthentication(boolean twoFactorAuthentication) {
 		this.twoFactorAuthentication = twoFactorAuthentication;
+	}
+
+	public String getBankCode() {
+		return bankCode;
+	}
+
+	public void setBankCode(String bankCode) {
+		this.bankCode = bankCode;
 	}
 
 }

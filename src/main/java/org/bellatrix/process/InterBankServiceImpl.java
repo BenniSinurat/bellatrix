@@ -20,18 +20,26 @@ import org.bellatrix.data.Header;
 import org.bellatrix.data.MemberView;
 import org.bellatrix.data.Members;
 import org.bellatrix.data.Notifications;
+import org.bellatrix.data.ScheduleTransfer;
 import org.bellatrix.data.Status;
 import org.bellatrix.data.StatusBuilder;
 import org.bellatrix.data.TransactionException;
+import org.bellatrix.data.TransferTypes;
 import org.bellatrix.data.Transfers;
 import org.bellatrix.services.BankAccountTransferPaymentConfirmation;
 import org.bellatrix.services.BankAccountTransferRequest;
 import org.bellatrix.services.BankAccountTransferResponse;
+import org.bellatrix.services.CreateScheduleTransferRequest;
+import org.bellatrix.services.DeleteScheduleTransferRequest;
 import org.bellatrix.services.InterBank;
 import org.bellatrix.services.LoadAccountTransferRequest;
 import org.bellatrix.services.LoadAccountTransferResponse;
 import org.bellatrix.services.LoadBankTransferRequest;
 import org.bellatrix.services.LoadBankTransferResponse;
+import org.bellatrix.services.LoadScheduleTransferByIDRequest;
+import org.bellatrix.services.LoadScheduleTransferByIDResponse;
+import org.bellatrix.services.LoadScheduleTransferByUsernameRequest;
+import org.bellatrix.services.LoadScheduleTransferByUsernameResponse;
 import org.bellatrix.services.PaymentDetails;
 import org.bellatrix.services.PaymentRequest;
 import org.bellatrix.services.RegisterAccountTransferRequest;
@@ -40,9 +48,12 @@ import org.bellatrix.services.SettlementTransferResponse;
 import org.bellatrix.services.TopupParamRequest;
 import org.bellatrix.services.TopupRequest;
 import org.bellatrix.services.TopupResponse;
+import org.bellatrix.services.UpdateScheduleTransfer;
 import org.mule.api.MuleException;
 import org.mule.module.client.MuleClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.hazelcast.core.HazelcastInstance;
@@ -250,6 +261,7 @@ public class InterBankServiceImpl implements InterBank {
 			atr.setAccountName(bank.getToAccountName());
 			atr.setAccountNumber(bank.getToAccountNumber());
 			atr.setBankName(bank.getBankName());
+			atr.setBankCode(bank.getBankCode());
 
 			return atr;
 		} catch (TransactionException ex) {
@@ -320,13 +332,14 @@ public class InterBankServiceImpl implements InterBank {
 			bankMap.put("bankCode", bank.getBankCode());
 			bankMap.put("swiftCode", bank.getSwiftCode());
 			// Change finalAmount to transactionAmount field amount
-			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString()); 
+			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString());
 			if (req.getDescription().equalsIgnoreCase(null) || req.getDescription().equalsIgnoreCase("")) {
-				bankMap.put("description", "Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
+				bankMap.put("description",
+						"Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
 			} else {
 				bankMap.put("description", req.getDescription());
 			}
-			
+
 			bankMap.put("remark", req.getDescription());
 
 			if (!bank.getTransferMethod().equalsIgnoreCase("0")
@@ -547,175 +560,298 @@ public class InterBankServiceImpl implements InterBank {
 	}
 
 	@Override
-	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
-			SettlementTransferRequest req) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public SettlementTransferResponse settlementTransferPayment(Holder<Header> headerParam,
-			SettlementTransferRequest req) throws Exception {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/**@Override
-	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
-			SettlementTransferRequest req) throws Exception {
-		SettlementTransferResponse atr = new SettlementTransferResponse();
+	public void createScheduleTransfer(Holder<Header> headerParam, CreateScheduleTransferRequest req) throws Exception {
 		try {
-			IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
-
-			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
-			bAccTrf.setAccountName(req.getAccountName());
-			bAccTrf.setAccountNumber(req.getAccountNumber());
-			bAccTrf.setAmount(req.getAmount());
-			bAccTrf.setTraceNumber(req.getTraceNumber());
-			bAccTrf.setUsername(req.getUsername());
-			bAccTrf.setDescription(req.getDescription());
-
-			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
-			PaymentDetails pd = new PaymentDetails();
-			pd.setFromMember(bank.getFromMember());
-
-			String tktID = UUID.randomUUID().toString();
-			String ticketID = "";
-			if (tktID.length() > 30) {
-				ticketID = tktID.substring(0, 30);
-			} else {
-				ticketID = tktID;
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			Members fromMember = baseRepository.getMembersRepository().findOneMembers("id", req.getFromMemberID());
+			if (fromMember == null) {
+				throw new TransactionException(String.valueOf(Status.MEMBER_NOT_FOUND));
 			}
-			pd.setTicketID(ticketID);
 
-			mapLrpcMap.put(req.getUsername() + req.getAccountNumber(), pd);
+			TransferTypes transferType = baseRepository.getTransferTypeRepository()
+					.findTransferTypeByID(req.getTranferTypeID());
+			if (transferType == null) {
+				throw new TransactionException(String.valueOf(Status.INVALID_TRANSFER_TYPE));
+			}
 
-			atr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
-			atr.setFinalAmount(bank.getTransactionAmount()); // Change finalAmount to transactionAmount
-			atr.setTotalFees(bank.getTotalFees());
-			atr.setTransactionAmount(bank.getTransactionAmount());
-			atr.setAccountName(bank.getToAccountName());
-			atr.setAccountNumber(bank.getToAccountNumber());
-			atr.setBankName(bank.getBankName());
-			atr.setTicketID(ticketID);
-
-			return atr;
-		} catch (TransactionException ex) {
-			atr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
-			return atr;
+			BankTransfers bank = baseRepository.getInterBankRepository().loadBanksFromID(req.getBankID(),
+					fromMember.getGroupID());
+			if (bank == null) {
+				throw new TransactionException(String.valueOf(Status.BANK_NOT_FOUND));
+			}
+			baseRepository.getInterBankRepository().createScheduleTransfer(req);
+		} catch (DuplicateKeyException ex) {
+			throw new TransactionException(String.valueOf(Status.MEMBER_ALREADY_REGISTERED));
 		}
 	}
 
 	@Override
-	public SettlementTransferResponse settlementTransferPayment(Holder<Header> headerParam,
-			SettlementTransferRequest req) throws Exception {
-		SettlementTransferResponse atr = new SettlementTransferResponse();
-		IMap<String, PaymentDetails> mapLrpcMap = instance.getMap("RequestPaymentMap");
-		PaymentDetails pc = mapLrpcMap.get(req.getUsername() + req.getAccountNumber());
-
+	public void updateScheduleTransfer(Holder<Header> headerParam, UpdateScheduleTransfer req) throws Exception {
 		try {
-			if (pc == null) {
-				atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-				return atr;
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			ScheduleTransfer transfers = baseRepository.getInterBankRepository().findOneScheduleTransfer("id",
+					req.getId());
+			if (transfers == null) {
+				throw new TransactionException(String.valueOf(Status.SCHEDULED_TRANSFER_NOT_FOUND));
 			}
+			req.setId(transfers.getId());
 
-			if (pc.isTwoFactorAuthentication()) {
-				if (req.getTicketID() != null) {
-					if (!req.getTicketID().equalsIgnoreCase(pc.getTicketID())) {
-						mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
-						atr.setStatus(StatusBuilder.getStatus(Status.OTP_VALIDATION_FAILED));
-						return atr;
-					}
-				} else {
-					mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
-					atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-					return atr;
+			if (req.getTranferTypeID() != null && req.getTranferTypeID() != transfers.getTransferTypeID()) {
+				TransferTypes transferType = baseRepository.getTransferTypeRepository()
+						.findTransferTypeByID(req.getTranferTypeID());
+				if (transferType == null) {
+					throw new TransactionException(String.valueOf(Status.INVALID_TRANSFER_TYPE));
 				}
-			}
-
-			mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
-
-			BankAccountTransferRequest bAccTrf = new BankAccountTransferRequest();
-			bAccTrf.setAccountName(req.getAccountName());
-			bAccTrf.setAccountNumber(req.getAccountNumber());
-			bAccTrf.setAmount(req.getAmount());
-			bAccTrf.setTraceNumber(req.getTraceNumber());
-			bAccTrf.setUsername(req.getUsername());
-			bAccTrf.setDescription(req.getDescription());
-
-			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), bAccTrf);
-
-			PaymentRequest pr = new PaymentRequest();
-			pr.setAmount(req.getAmount());
-			pr.setFromMember(req.getUsername());
-			pr.setToMember(bank.getFromUsername());
-			pr.setTraceNumber(req.getTraceNumber());
-			pr.setTransferTypeID(bank.getTransferTypeID());
-			pr.setReferenceNumber(req.getAccountNumber());
-			if (req.getDescription().equalsIgnoreCase(null)) {
-				pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
 			} else {
-				pr.setDescription(req.getDescription());
+				req.setTranferTypeID(transfers.getTransferTypeID());
 			}
-			/*
-			 * INSERT Pending Transfers
-			 */
-			/*PaymentDetails pd = paymentValidation.validatePayment(pr, headerParam.value.getToken(), "PENDING");
 
-			Map<String, Object> bankMap = new HashMap<String, Object>();
-			bankMap.put("toAccountNumber", bank.getToAccountNumber());
-			bankMap.put("toAccountName", bank.getToAccountName());
-			bankMap.put("toResidentStatus", bank.getToResidentStatus());
-			bankMap.put("toProfileType", bank.getToProfileType());
-			bankMap.put("toEmailAddress", pd.getFromMember().getEmail());
-			bankMap.put("fromAccountNumber", bank.getFromAccountNumber());
-			bankMap.put("username", req.getUsername());
-			bankMap.put("bankCode", bank.getBankCode());
-			bankMap.put("swiftCode", bank.getSwiftCode());
-			bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString()); // Change finalAmount to
-																						// transactionAmount
-			bankMap.put("description", "Transfer " + bank.getBankName() + ", AccountNo : " + req.getAccountNumber());
-			bankMap.put("remark", req.getDescription());
-
-			if (!bank.getTransferMethod().equalsIgnoreCase("0")
-					&& pd.getFees().getFinalAmount().intValue() > 100000000) {
-				bankMap.put("transferMethod", "1");
-				logger.info("[Transfer Method: 1]");
+			if (req.getFromMemberID() != null && req.getFromMemberID() != transfers.getFromMemberID()) {
+				Members fromMember = baseRepository.getMembersRepository().findOneMembers("id", req.getFromMemberID());
+				if (fromMember == null) {
+					throw new TransactionException(String.valueOf(Status.MEMBER_NOT_FOUND));
+				}
 			} else {
-				bankMap.put("transferMethod", bank.getTransferMethod());
-				logger.info("[Transfer Method: " + bank.getTransferMethod() + "]");
+				req.setFromMemberID(transfers.getFromMemberID());
 			}
 
-			bankMap.put("chargingCode", bank.getChargingCode());
-			bankMap.put("traceNumber", req.getTraceNumber());
-			bankMap.put("transactionNumber", pd.getTransactionNumber());
-			bankMap.put("transferTypeID", bank.getTransferTypeID());
-			bankMap.put("transferID", pd.getTransferID());
-			bankMap.put("token", headerParam.value.getToken());
-			bankMap.put("bankName", bank.getBankName());
+			if (req.getBankID() != null && req.getBankID() != transfers.getBankID()) {
+				Members fromMember = baseRepository.getMembersRepository().findOneMembers("id", req.getFromMemberID());
+				if (fromMember == null) {
+					throw new TransactionException(String.valueOf(Status.MEMBER_NOT_FOUND));
+				}
+				BankTransfers bank = baseRepository.getInterBankRepository().loadBanksFromID(req.getBankID(),
+						fromMember.getGroupID());
+				if (bank == null) {
+					throw new TransactionException(String.valueOf(Status.BANK_NOT_FOUND));
+				}
+			} else {
+				req.setBankID(transfers.getBankID());
+			}
 
-			MuleClient client;
-			client = new MuleClient(configurator.getMuleContext());
-			Map<String, Object> header = new HashMap<String, Object>();
-			header.put("TRANSACTION_TYPE", "payment");
-			header.put("GATEWAY_URL", bank.getGatewayURL());
+			if (req.getAccountName() == null) {
+				req.setAccountName(transfers.getAccountName());
+			}
 
-			client.dispatch("InterbankVM", bankMap, header);
+			if (req.getAccountNo() == null) {
+				req.setAccountNo(transfers.getAccountNo());
+			}
 
-			atr.setStatus(StatusBuilder.getStatus(Status.REQUEST_RECEIVED));
-			atr.setFinalAmount(bank.getTransactionAmount());// Change finalAmount to transactionAmount
-			atr.setTotalFees(bank.getTotalFees());
-			atr.setTransactionAmount(bank.getTransactionAmount());
-			atr.setAccountNumber(req.getAccountNumber());
-			atr.setBankName(bank.getBankName());
-			atr.setTransactionNumber(pd.getTransactionNumber());
-			atr.setTraceNumber(req.getTraceNumber());
-			return atr;
+			req.setEnabled(req.isEnabled());
+			
+			if(req.getScheduleDate() == null) {
+				req.setScheduleDate(transfers.getScheduletDate());
+			}
 
-		} catch (TransactionException ex) {
-			atr.setStatus(StatusBuilder.getStatus(ex.getMessage()));
-			return atr;
+			baseRepository.getInterBankRepository().updateScheduleTransfer(req);
+		} catch (DataIntegrityViolationException e) {
+			throw new TransactionException(String.valueOf(Status.INVALID_PARAMETER));
 		}
-	}**/
+	}
+
+	@Override
+	public void deleteScheduleTransfer(Holder<Header> headerParam, DeleteScheduleTransferRequest req)
+			throws Exception {
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			baseRepository.getInterBankRepository().deleteScheduleTransfer(req.getId());
+		} catch (Exception e) {
+			throw new TransactionException(e.getMessage());
+		}
+	}
+
+	@Override
+	public LoadScheduleTransferByUsernameResponse loadScheduleTransferByUsername(Holder<Header> headerParam,
+			LoadScheduleTransferByUsernameRequest req) throws Exception {
+		LoadScheduleTransferByUsernameResponse res = new LoadScheduleTransferByUsernameResponse();
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			Members member = baseRepository.getMembersRepository().findOneMembers("username", req.getUsername());
+			if (member == null) {
+				throw new TransactionException(String.valueOf(Status.MEMBER_NOT_FOUND));
+			}
+			List<ScheduleTransfer> list = baseRepository.getInterBankRepository().findScheduleTransfer("from_member_id",
+					member.getId());
+			res.setScheduleTransfers(list);
+			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			return res;
+		} catch (Exception e) {
+			res.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return res;
+		}
+
+	}
+
+	@Override
+	public LoadScheduleTransferByIDResponse loadScheduleTransferByID(Holder<Header> headerParam,
+			LoadScheduleTransferByIDRequest req) {
+		LoadScheduleTransferByIDResponse res = new LoadScheduleTransferByIDResponse();
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			ScheduleTransfer st = baseRepository.getInterBankRepository().findOneScheduleTransfer("id", req.getId());
+
+			res.setScheduleTransfers(st);
+			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+			
+			return res;
+		} catch (Exception e) {
+			res.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return res;
+		}
+	}
+
+	@Override
+	public SettlementTransferResponse settlementTransferInquiry(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public SettlementTransferResponse settlementTransferPayment(Holder<Header> headerParam,
+			SettlementTransferRequest req) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * @Override public SettlementTransferResponse
+	 *           settlementTransferInquiry(Holder<Header> headerParam,
+	 *           SettlementTransferRequest req) throws Exception {
+	 *           SettlementTransferResponse atr = new SettlementTransferResponse();
+	 *           try { IMap<String, PaymentDetails> mapLrpcMap =
+	 *           instance.getMap("RequestPaymentMap");
+	 * 
+	 *           BankAccountTransferRequest bAccTrf = new
+	 *           BankAccountTransferRequest();
+	 *           bAccTrf.setAccountName(req.getAccountName());
+	 *           bAccTrf.setAccountNumber(req.getAccountNumber());
+	 *           bAccTrf.setAmount(req.getAmount());
+	 *           bAccTrf.setTraceNumber(req.getTraceNumber());
+	 *           bAccTrf.setUsername(req.getUsername());
+	 *           bAccTrf.setDescription(req.getDescription());
+	 * 
+	 *           BankTransferRequest bank =
+	 *           interbankValidation.validateTransferBank(headerParam.value.getToken(),
+	 *           bAccTrf); PaymentDetails pd = new PaymentDetails();
+	 *           pd.setFromMember(bank.getFromMember());
+	 * 
+	 *           String tktID = UUID.randomUUID().toString(); String ticketID = "";
+	 *           if (tktID.length() > 30) { ticketID = tktID.substring(0, 30); }
+	 *           else { ticketID = tktID; } pd.setTicketID(ticketID);
+	 * 
+	 *           mapLrpcMap.put(req.getUsername() + req.getAccountNumber(), pd);
+	 * 
+	 *           atr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+	 *           atr.setFinalAmount(bank.getTransactionAmount()); // Change
+	 *           finalAmount to transactionAmount
+	 *           atr.setTotalFees(bank.getTotalFees());
+	 *           atr.setTransactionAmount(bank.getTransactionAmount());
+	 *           atr.setAccountName(bank.getToAccountName());
+	 *           atr.setAccountNumber(bank.getToAccountNumber());
+	 *           atr.setBankName(bank.getBankName()); atr.setTicketID(ticketID);
+	 * 
+	 *           return atr; } catch (TransactionException ex) {
+	 *           atr.setStatus(StatusBuilder.getStatus(ex.getMessage())); return
+	 *           atr; } }
+	 * 
+	 * @Override public SettlementTransferResponse
+	 *           settlementTransferPayment(Holder<Header> headerParam,
+	 *           SettlementTransferRequest req) throws Exception {
+	 *           SettlementTransferResponse atr = new SettlementTransferResponse();
+	 *           IMap<String, PaymentDetails> mapLrpcMap =
+	 *           instance.getMap("RequestPaymentMap"); PaymentDetails pc =
+	 *           mapLrpcMap.get(req.getUsername() + req.getAccountNumber());
+	 * 
+	 *           try { if (pc == null) {
+	 *           atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+	 *           return atr; }
+	 * 
+	 *           if (pc.isTwoFactorAuthentication()) { if (req.getTicketID() !=
+	 *           null) { if (!req.getTicketID().equalsIgnoreCase(pc.getTicketID()))
+	 *           { mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
+	 *           atr.setStatus(StatusBuilder.getStatus(Status.OTP_VALIDATION_FAILED));
+	 *           return atr; } } else { mapLrpcMap.remove(req.getUsername() +
+	 *           req.getAccountNumber());
+	 *           atr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+	 *           return atr; } }
+	 * 
+	 *           mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
+	 * 
+	 *           BankAccountTransferRequest bAccTrf = new
+	 *           BankAccountTransferRequest();
+	 *           bAccTrf.setAccountName(req.getAccountName());
+	 *           bAccTrf.setAccountNumber(req.getAccountNumber());
+	 *           bAccTrf.setAmount(req.getAmount());
+	 *           bAccTrf.setTraceNumber(req.getTraceNumber());
+	 *           bAccTrf.setUsername(req.getUsername());
+	 *           bAccTrf.setDescription(req.getDescription());
+	 * 
+	 *           BankTransferRequest bank =
+	 *           interbankValidation.validateTransferBank(headerParam.value.getToken(),
+	 *           bAccTrf);
+	 * 
+	 *           PaymentRequest pr = new PaymentRequest();
+	 *           pr.setAmount(req.getAmount()); pr.setFromMember(req.getUsername());
+	 *           pr.setToMember(bank.getFromUsername());
+	 *           pr.setTraceNumber(req.getTraceNumber());
+	 *           pr.setTransferTypeID(bank.getTransferTypeID());
+	 *           pr.setReferenceNumber(req.getAccountNumber()); if
+	 *           (req.getDescription().equalsIgnoreCase(null)) {
+	 *           pr.setDescription("Transfer " + bank.getBankName() + ", AccountNo :
+	 *           " + req.getAccountNumber()); } else {
+	 *           pr.setDescription(req.getDescription()); } /* INSERT Pending
+	 *           Transfers
+	 */
+	/*
+	 * PaymentDetails pd = paymentValidation.validatePayment(pr,
+	 * headerParam.value.getToken(), "PENDING");
+	 * 
+	 * Map<String, Object> bankMap = new HashMap<String, Object>();
+	 * bankMap.put("toAccountNumber", bank.getToAccountNumber());
+	 * bankMap.put("toAccountName", bank.getToAccountName());
+	 * bankMap.put("toResidentStatus", bank.getToResidentStatus());
+	 * bankMap.put("toProfileType", bank.getToProfileType());
+	 * bankMap.put("toEmailAddress", pd.getFromMember().getEmail());
+	 * bankMap.put("fromAccountNumber", bank.getFromAccountNumber());
+	 * bankMap.put("username", req.getUsername()); bankMap.put("bankCode",
+	 * bank.getBankCode()); bankMap.put("swiftCode", bank.getSwiftCode());
+	 * bankMap.put("amount", pd.getFees().getTransactionAmount().toPlainString());
+	 * // Change finalAmount to // transactionAmount bankMap.put("description",
+	 * "Transfer " + bank.getBankName() + ", AccountNo : " +
+	 * req.getAccountNumber()); bankMap.put("remark", req.getDescription());
+	 * 
+	 * if (!bank.getTransferMethod().equalsIgnoreCase("0") &&
+	 * pd.getFees().getFinalAmount().intValue() > 100000000) {
+	 * bankMap.put("transferMethod", "1"); logger.info("[Transfer Method: 1]"); }
+	 * else { bankMap.put("transferMethod", bank.getTransferMethod());
+	 * logger.info("[Transfer Method: " + bank.getTransferMethod() + "]"); }
+	 * 
+	 * bankMap.put("chargingCode", bank.getChargingCode());
+	 * bankMap.put("traceNumber", req.getTraceNumber());
+	 * bankMap.put("transactionNumber", pd.getTransactionNumber());
+	 * bankMap.put("transferTypeID", bank.getTransferTypeID());
+	 * bankMap.put("transferID", pd.getTransferID()); bankMap.put("token",
+	 * headerParam.value.getToken()); bankMap.put("bankName", bank.getBankName());
+	 * 
+	 * MuleClient client; client = new MuleClient(configurator.getMuleContext());
+	 * Map<String, Object> header = new HashMap<String, Object>();
+	 * header.put("TRANSACTION_TYPE", "payment"); header.put("GATEWAY_URL",
+	 * bank.getGatewayURL());
+	 * 
+	 * client.dispatch("InterbankVM", bankMap, header);
+	 * 
+	 * atr.setStatus(StatusBuilder.getStatus(Status.REQUEST_RECEIVED));
+	 * atr.setFinalAmount(bank.getTransactionAmount());// Change finalAmount to
+	 * transactionAmount atr.setTotalFees(bank.getTotalFees());
+	 * atr.setTransactionAmount(bank.getTransactionAmount());
+	 * atr.setAccountNumber(req.getAccountNumber());
+	 * atr.setBankName(bank.getBankName());
+	 * atr.setTransactionNumber(pd.getTransactionNumber());
+	 * atr.setTraceNumber(req.getTraceNumber()); return atr;
+	 * 
+	 * } catch (TransactionException ex) {
+	 * atr.setStatus(StatusBuilder.getStatus(ex.getMessage())); return atr; } }
+	 **/
 
 }

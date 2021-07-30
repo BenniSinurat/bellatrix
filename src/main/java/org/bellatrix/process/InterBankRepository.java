@@ -1,7 +1,10 @@
 package org.bellatrix.process;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -10,15 +13,22 @@ import javax.sql.DataSource;
 
 import org.bellatrix.data.AccountTransfer;
 import org.bellatrix.data.BankTransfers;
+import org.bellatrix.data.ScheduleTransfer;
 import org.bellatrix.data.Status;
+import org.bellatrix.services.CreateScheduleTransferRequest;
 import org.bellatrix.services.RegisterAccountTransferRequest;
+import org.bellatrix.services.UpdateScheduleTransfer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.mysql.jdbc.Statement;
 
 @Component
 @Repository
@@ -181,10 +191,100 @@ public class InterBankRepository {
 			throw new Exception(String.valueOf(Status.ACCOUNT_NOT_FOUND));
 		}
 	}
-	
+
 	public Integer countTotalbankAccounts(Integer memberID) {
-		int count = this.jdbcTemplate.queryForObject("select  count(id) from bank_account where member_id = ?", Integer.class, memberID);
+		int count = this.jdbcTemplate.queryForObject("select  count(id) from bank_account where member_id = ?",
+				Integer.class, memberID);
 		return count;
+	}
+
+	@Transactional
+	public void createScheduleTransfer(CreateScheduleTransferRequest req) {
+		final CreateScheduleTransferRequest transfers = req;
+		jdbcTemplate.update(new PreparedStatementCreator() {
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				PreparedStatement statement = con.prepareStatement(
+						"insert into schedule_transfer (from_member_id, transfer_type_id, bank_id, account_no, account_name, schedule_date, enabled) values (?, ?, ?, ?, ?, ?, ?)",
+						Statement.RETURN_GENERATED_KEYS);
+				statement.setInt(1, transfers.getFromMemberID());
+				statement.setInt(2, transfers.getTranferTypeID());
+				statement.setInt(3, transfers.getBankID());
+				statement.setString(4, transfers.getAccountNo());
+				statement.setString(5, transfers.getAccountName());
+				if (transfers.getScheduleDate() != null) {
+					statement.setTimestamp(6, Timestamp.valueOf(transfers.getScheduleDate()));
+				} else {
+					statement.setTimestamp(6, null);
+				}
+				statement.setBoolean(7, transfers.isEnabled());
+				return statement;
+			}
+		});
+	}
+
+	@Transactional
+	public void updateScheduleTransfer(UpdateScheduleTransfer req) {
+		final UpdateScheduleTransfer transfer = req;
+		jdbcTemplate.update(
+				"update schedule_transfer set from_member_id = ?, transfer_type_id = ?, bank_id = ?, account_no = ?, account_name = ?, schedule_date = ?, enabled = ? where id = ?",
+				transfer.getFromMemberID(), transfer.getTranferTypeID(), transfer.getBankID(), transfer.getAccountNo(),
+				transfer.getAccountName(), Timestamp.valueOf(transfer.getScheduleDate()), transfer.isEnabled(), transfer.getId());
+	}
+
+	public List<ScheduleTransfer> findScheduleTransfer(String byField, Object id) {
+		try {
+			List<ScheduleTransfer> transfers = this.jdbcTemplate.query(
+					"select * from schedule_transfer where " + byField + " = ?", new Object[] { id },
+					new RowMapper<ScheduleTransfer>() {
+						public ScheduleTransfer mapRow(ResultSet rs, int rowNum) throws SQLException {
+							ScheduleTransfer transfers = new ScheduleTransfer();
+							transfers.setAccountName(rs.getString("account_name"));
+							transfers.setAccountNo(rs.getString("account_no"));
+							transfers.setBankID(rs.getInt("bank_id"));
+							transfers.setFromMemberID(rs.getInt("from_member_id"));
+							transfers.setId(rs.getInt("id"));
+							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
+							transfers.setEnabled(rs.getBoolean("enabled"));
+							transfers.setScheduletDate(rs.getString("schedule_date"));
+							return transfers;
+						}
+					});
+			return transfers;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public ScheduleTransfer findOneScheduleTransfer(String byField, Object id) {
+		try {
+			ScheduleTransfer transfers = this.jdbcTemplate.queryForObject(
+					"select *  from schedule_transfer where " + byField + " = ?", new Object[] { id },
+					new RowMapper<ScheduleTransfer>() {
+						public ScheduleTransfer mapRow(ResultSet rs, int rowNum) throws SQLException {
+							ScheduleTransfer transfers = new ScheduleTransfer();
+							transfers.setAccountName(rs.getString("account_name"));
+							transfers.setAccountNo(rs.getString("account_no"));
+							transfers.setBankID(rs.getInt("bank_id"));
+							transfers.setFromMemberID(rs.getInt("from_member_id"));
+							transfers.setId(rs.getInt("id"));
+							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
+							transfers.setEnabled(rs.getBoolean("enabled"));
+							transfers.setScheduletDate(rs.getString("schedule_date"));
+							return transfers;
+						}
+					});
+			return transfers;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
+	public void deleteScheduleTransfer(Integer id) throws Exception {
+		int affected = this.jdbcTemplate.update("delete from schedule_transfer where id = ?", new Object[] { id });
+		if (affected == 0) {
+			throw new Exception(String.valueOf(Status.SCHEDULED_TRANSFER_NOT_FOUND));
+		}
 	}
 
 	@Autowired

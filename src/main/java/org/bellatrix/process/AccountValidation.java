@@ -131,15 +131,15 @@ public class AccountValidation {
 				account.getId());
 		String marking = source == true ? "Source" : "Target";
 		logger.info("[" + member.getUsername() + " (" + marking + ") Account Monthly Limit : " + limit + "/"
-				+ account.getUpperCreditLimit() + "]");
+				+ account.getUpperCreditLimit() + "/" + totalPositiveFee+ "]");
 
 		if (limit.add(totalPositiveFee).compareTo(account.getUpperCreditLimit()) == 1) {
 			if (source) {
 				logger.info("[Source Monthly Account has Over Limit]");
-				throw new TransactionException(String.valueOf(Status.CREDIT_LIMIT_REACHED));
+				throw new TransactionException(String.valueOf(Status.MONTHLY_CREDIT_LIMIT_REACHED));
 			} else {
 				logger.info("[Destination Monthly Account has Over Limit]");
-				throw new TransactionException(String.valueOf(Status.DESTINATION_CREDIT_LIMIT_REACHED));
+				throw new TransactionException(String.valueOf(Status.MONTHLY_DESTINATION_CREDIT_LIMIT_REACHED));
 			}
 		}
 		return limit;
@@ -169,7 +169,7 @@ public class AccountValidation {
 		} else {
 			logger.info("[Credit Limit : " + account.getCreditLimit() + "/" + balance.add(finalAmount) + "]");
 			if ((balance.add(finalAmount)).compareTo(account.getCreditLimit()) > 0) {
-				throw new TransactionException(String.valueOf(Status.CREDIT_LIMIT_REACHED));
+				throw new TransactionException(String.valueOf(Status.DESTINATION_CREDIT_LIMIT_REACHED));
 			}
 		}
 

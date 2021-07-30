@@ -275,16 +275,20 @@ public class PosPaymentValidation {
 			/*
 			 * Validate NNS ID
 			 */
-			Members toMember = new Members();
+			Terminal terminal = new Terminal();
 			if (req.getNnsID() == null) {
-				POSAcquiring acquiring = baseRepository.getPosRepository().getPosAcquiring(req.getAcquiringID());
+				//POSAcquiring acquiring = baseRepository.getPosRepository().getPosAcquiring(req.getAcquiringID());
 				/*
 				 * Validate ToMember
 				 */
-				toMember = memberValidation.validateMemberID(acquiring.getMemberID(), false);
-				targetMember = toMember;
+				//toMember = memberValidation.validateMemberID(acquiring.getMemberID(), false);
+				//targetMember = toMember;
+				throw new TransactionException(String.valueOf(Status.DESTINATION_MEMBER_NOT_FOUND));
 			} else {
-				Terminal terminal = baseRepository.getPosRepository().getPosTerminalByNNSID(req.getNnsID());
+				 terminal = baseRepository.getPosRepository().getPosTerminalByNNSID(req.getNnsID());
+				 if(terminal == null) {
+					 throw new TransactionException(String.valueOf(Status.DESTINATION_MEMBER_NOT_FOUND));
+				 }
 				targetMember = terminal.getToMember();
 			}
 			
@@ -296,7 +300,7 @@ public class PosPaymentValidation {
 			/*
 			 * Validate TransferType
 			 */
-			TransferTypes transferType = transferTypeValidation.validateTransferType(req.getTransferTypeID(),
+			TransferTypes transferType = transferTypeValidation.validateTransferType(terminal.getTransferTypeID(),
 					fromMember.getGroupID(), req.getAmount(), fromMember.getId());
 
 			if (req.getDescription() == null) {
@@ -322,7 +326,7 @@ public class PosPaymentValidation {
 				/*
 				 * Validate ToAccount
 				 */
-				toAccount = accountValidation.validateAccount(transferType, toMember, false);
+				toAccount = accountValidation.validateAccount(transferType, targetMember, false);
 			} else {
 				toAccount = fromAccount;
 			}
@@ -334,8 +338,8 @@ public class PosPaymentValidation {
 			mapLock.lock(fromMember.getUsername() + fromAccount.getId(), 80000, TimeUnit.MILLISECONDS);
 			logger.info("[LOCK Source Member/Account : " + req.getFromMember() + "/" + fromAccount.getId() + "]");
 
-			mapLock.put(toMember.getUsername() + toAccount.getId(), BigDecimal.ZERO);
-			mapLock.lock(toMember.getUsername() + toAccount.getId(), 80000, TimeUnit.MILLISECONDS);
+			mapLock.put(targetMember.getUsername() + toAccount.getId(), BigDecimal.ZERO);
+			mapLock.lock(targetMember.getUsername() + toAccount.getId(), 80000, TimeUnit.MILLISECONDS);
 			logger.info("[LOCK Destination Member/Account : " + req.getToMember() + "/" + toAccount.getId() + "]");
 
 			/*
@@ -349,7 +353,7 @@ public class PosPaymentValidation {
 			 * Regular Fees Processing (Skip this if Priority Fee != null)
 			 */
 
-			FeeResult feeResult = feeProcessor.ProcessFee(transferType, fromMember, toMember, fromAccount, toAccount,
+			FeeResult feeResult = feeProcessor.ProcessFee(transferType, fromMember, targetMember, fromAccount, toAccount,
 					req.getAmount());
 			fees = feeResult.getListTotalFees();
 
@@ -393,12 +397,12 @@ public class PosPaymentValidation {
 				/*
 				 * Get ToMember UpperCredit Limit
 				 */
-				accountValidation.validateMonthlyLimit(toMember, toAccount, feeResult.getFinalAmount(), false);
+				accountValidation.validateMonthlyLimit(targetMember, toAccount, feeResult.getFinalAmount(), false);
 
 				/*
 				 * Get ToMember Balance Inquiry (Lock Account)
 				 */
-				accountValidation.validateAccountBalance(toMember, toAccount, feeResult.getFinalAmount(), false);
+				accountValidation.validateAccountBalance(targetMember, toAccount, feeResult.getFinalAmount(), false);
 			}
 
 			/*
@@ -409,7 +413,7 @@ public class PosPaymentValidation {
 			String trxNo = Utils.GetDate("yyyyMMddkkmmssSSS") + clusterid + Utils.GenerateTransactionNumber();
 
 			Integer transferID = baseRepository.getTransferRepository().createTransfers(req,
-					feeResult.getTransactionAmount(), transferType, fromAccount, toAccount, fromMember, toMember, trxNo,
+					feeResult.getTransactionAmount(), transferType, fromAccount, toAccount, fromMember, targetMember, trxNo,
 					null, transactionState, wsID);
 
 			/*
@@ -425,7 +429,7 @@ public class PosPaymentValidation {
 			pc.setFees(feeResult);
 			pc.setFromMember(fromMember);
 			pc.setFromAccount(fromAccount);
-			pc.setToMember(toMember);
+			pc.setToMember(targetMember);
 			pc.setToAccount(toAccount);
 			pc.setRequest(req);
 			pc.setWebService(ws);

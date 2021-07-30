@@ -60,15 +60,37 @@ public interface InterBank {
 	@WebMethod(action = "removeAccountTransfer")
 	public void removeAccountTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadAccountTransferRequest req) throws Exception;
-	
+
 	@WebMethod(action = "settlementTransferInquiry")
 	public SettlementTransferResponse settlementTransferInquiry(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam SettlementTransferRequest req) throws Exception;
-	
+
 	@WebMethod(action = "settlementTransferPayment")
 	public SettlementTransferResponse settlementTransferPayment(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam SettlementTransferRequest req) throws Exception;
+
+	@WebMethod(action = "createScheduleTransfer")
+	public void createScheduleTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam CreateScheduleTransferRequest req) throws Exception;
+
+	@WebMethod(action = "updateScheduleTransfer")
+	public void updateScheduleTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam UpdateScheduleTransfer req) throws Exception;
+
+	@WebMethod(action = "deleteScheduleTransfer")
+	public void deleteScheduleTransfer(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam DeleteScheduleTransferRequest req) throws Exception;
+
+	@WebMethod(action = "loadScheduleTransferByUsername")
+	public LoadScheduleTransferByUsernameResponse loadScheduleTransferByUsername(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadScheduleTransferByUsernameRequest req) throws Exception;
+
+	@WebMethod(action = "loadScheduleTransferByID")
+	public LoadScheduleTransferByIDResponse loadScheduleTransferByID(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadScheduleTransferByIDRequest req);
 
 }

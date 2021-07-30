@@ -270,10 +270,9 @@ public class PaymentValidation {
 
 				/*
 				 * Validate FromMember UpperCredit Limit --> Commented for
-				 * validating incoming transaction ONLY (PBI Terbaru 2016)
+				 * validating incoming transaction ONLY (PBI Terbaru 2016) --> change to validating outcoming transaction ONLY
 				 */
-				// accountValidation.validateMonthlyLimit(fromMember,
-				// fromAccount, feeResult.getFinalAmount(), true);
+				accountValidation.validateMonthlyLimit(fromMember, fromAccount, feeResult.getFinalAmount(), true);
 
 				/*
 				 * Get FromMember Balance Inquiry (Lock Account)

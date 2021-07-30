@@ -8,7 +8,6 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 import org.bellatrix.data.Groups;
-import org.bellatrix.data.Members;
 import org.bellatrix.data.Notifications;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
