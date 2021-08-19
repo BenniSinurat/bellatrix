@@ -8,7 +8,6 @@ import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
 import org.bellatrix.data.Members;
-import org.bellatrix.data.POSAcquiring;
 import org.bellatrix.data.Terminal;
 import org.bellatrix.services.DeletePOSRequest;
 import org.bellatrix.services.RegisterPOSRequest;
@@ -43,14 +42,10 @@ public class PosRepository {
 							terminal.setMsisdn(rs.getString("outlet_msisdn"));
 							terminal.setEmail(rs.getString("outlet_email"));
 							terminal.setName(rs.getString("name"));
-							terminal.setOpenPayment(rs.getBoolean("open_payment"));
 							terminal.setTransferTypeID(rs.getInt("transfer_type_id"));
-							terminal.setFixedAmount(rs.getBoolean("fixed_amount"));
-							if (terminal.isFixedAmount()) {
-								terminal.setAmount(rs.getBigDecimal("amount"));
-							} else {
-								terminal.setAmount(null);
-							}
+							terminal.setNnsID(rs.getString("nns_id"));
+							terminal.setMerchantCategoryCode(rs.getString("merchant_category_code"));
+
 							return terminal;
 						}
 					});
@@ -76,14 +71,9 @@ public class PosRepository {
 									terminal.setMsisdn(rs.getString("outlet_msisdn"));
 									terminal.setEmail(rs.getString("outlet_email"));
 									terminal.setName(rs.getString("name"));
-									terminal.setOpenPayment(rs.getBoolean("open_payment"));
 									terminal.setTransferTypeID(rs.getInt("transfer_type_id"));
-									terminal.setFixedAmount(rs.getBoolean("fixed_amount"));
-									if (terminal.isFixedAmount()) {
-										terminal.setAmount(rs.getBigDecimal("amount"));
-									} else {
-										terminal.setAmount(null);
-									}
+									terminal.setNnsID(rs.getString("nns_id"));
+									terminal.setMerchantCategoryCode(rs.getString("merchant_category_code"));
 									return terminal;
 								}
 							});
@@ -95,18 +85,17 @@ public class PosRepository {
 
 	public void registerPOS(RegisterPOSRequest req, Integer memberID) {
 		this.jdbcTemplate.update(
-				"insert into pos_terminal (member_id, transfer_type_id, name, outlet_pic, outlet_address, outlet_city, postal_code, outlet_email, outlet_msisdn, open_payment, fixed_amount, amount) values(?,?,?,?,?,?,?,?,?,?,?,?);",
+				"insert into pos_terminal (member_id, transfer_type_id, name, outlet_pic, outlet_address, outlet_city, postal_code, outlet_email, outlet_msisdn, nns_id, merchant_category_code) values(?,?,?,?,?,?,?,?,?,?,?);",
 				memberID, req.getTransferTypeID(), req.getName(), req.getPic(), req.getAddress(), req.getCity(),
-				req.getPostalCode(), req.getEmail(), req.getMsisdn(), req.getOpenPayment(), req.getFixedAmount(),
-				req.getAmount());
+				req.getPostalCode(), req.getEmail(), req.getMsisdn(), req.getNnsID(), req.getMerchantCategoryCode());
 	}
 
 	public void updatePOS(UpdatePOSRequest req, Integer memberID) {
 		this.jdbcTemplate.update(
-				"update pos_terminal set pos_terminal.transfer_type_id = ?, pos_terminal.name = ?, pos_terminal.outlet_pic = ?, pos_terminal.outlet_address = ?, pos_terminal.outlet_city = ?, pos_terminal.postal_code = ?, pos_terminal.outlet_email = ?, pos_terminal.outlet_msisdn = ?, pos_terminal.open_payment = ?, pos_terminal.fixed_amount = ?, pos_terminal.amount = ? where id = ? and member_id = ?",
+				"update pos_terminal set pos_terminal.transfer_type_id = ?, pos_terminal.name = ?, pos_terminal.outlet_pic = ?, pos_terminal.outlet_address = ?, pos_terminal.outlet_city = ?, pos_terminal.postal_code = ?, pos_terminal.outlet_email = ?, pos_terminal.outlet_msisdn = ?, pos_terminal.merchant_category_code = ? where id = ? and member_id = ?",
 				req.getTransferTypeID(), req.getName(), req.getPic(), req.getAddress(), req.getCity(),
-				req.getPostalCode(), req.getEmail(), req.getMsisdn(), req.getOpenPayment(), req.getFixedAmount(),
-				req.getAmount(), req.getTerminalID(), memberID);
+				req.getPostalCode(), req.getEmail(), req.getMsisdn(), req.getMerchantCategoryCode(),
+				req.getTerminalID(), memberID);
 	}
 
 	public void deletePOS(DeletePOSRequest req, Integer memberID) {
@@ -129,14 +118,10 @@ public class PosRepository {
 							terminal.setMsisdn(rs.getString("outlet_msisdn"));
 							terminal.setEmail(rs.getString("outlet_email"));
 							terminal.setName(rs.getString("name"));
-							terminal.setOpenPayment(rs.getBoolean("open_payment"));
 							terminal.setTransferTypeID(rs.getInt("transfer_type_id"));
-							terminal.setFixedAmount(rs.getBoolean("fixed_amount"));
-							if (terminal.isFixedAmount()) {
-								terminal.setAmount(rs.getBigDecimal("amount"));
-							} else {
-								terminal.setAmount(null);
-							}
+							terminal.setNnsID(rs.getString("nns_id"));
+							terminal.setMerchantCategoryCode(rs.getString("merchant_category_code"));
+
 							Members members = new Members();
 							members.setId(rs.getInt("member_id"));
 							members.setGroupID(rs.getInt("group_id"));
@@ -165,19 +150,29 @@ public class PosRepository {
 		}
 	}
 
-	public POSAcquiring getPosAcquiring(String acquiringID) {
+	public Terminal getPosTerminalDetail(String nnsID, Members member) {
 		try {
-			POSAcquiring acquiring = this.jdbcTemplate.queryForObject("select * from pos_acquiring where acquiring = ?",
-					new Object[] { acquiringID }, new RowMapper<POSAcquiring>() {
-						public POSAcquiring mapRow(ResultSet rs, int rowNum) throws SQLException {
-							POSAcquiring acquiring = new POSAcquiring();
-							acquiring.setId(rs.getInt("id"));
-							acquiring.setAcquiring(rs.getString("acquiring"));
-							acquiring.setMemberID(rs.getInt("member_id"));
-							return acquiring;
+			Terminal terminal = this.jdbcTemplate.queryForObject("select * from pos_terminal where nns_id = ?",
+					new Object[] { nnsID }, new RowMapper<Terminal>() {
+						public Terminal mapRow(ResultSet rs, int rowNum) throws SQLException {
+							Terminal terminal = new Terminal();
+							terminal.setId(rs.getInt("id"));
+							terminal.setToMember(member);
+							terminal.setAddress(rs.getString("outlet_address"));
+							terminal.setCity(rs.getString("outlet_city"));
+							terminal.setPostalCode(rs.getString("postal_code"));
+							terminal.setPic(rs.getString("outlet_pic"));
+							terminal.setMsisdn(rs.getString("outlet_msisdn"));
+							terminal.setEmail(rs.getString("outlet_email"));
+							terminal.setName(rs.getString("name"));
+							terminal.setTransferTypeID(rs.getInt("transfer_type_id"));
+							terminal.setNnsID(rs.getString("nns_id"));
+							terminal.setMerchantCategoryCode(rs.getString("merchant_category_code"));
+
+							return terminal;
 						}
 					});
-			return acquiring;
+			return terminal;
 		} catch (EmptyResultDataAccessException e) {
 			return null;
 		}

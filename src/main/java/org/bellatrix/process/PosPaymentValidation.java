@@ -11,7 +11,6 @@ import org.bellatrix.data.Accounts;
 import org.bellatrix.data.FeeResult;
 import org.bellatrix.data.Fees;
 import org.bellatrix.data.Members;
-import org.bellatrix.data.POSAcquiring;
 import org.bellatrix.data.Status;
 import org.bellatrix.data.Terminal;
 import org.bellatrix.data.TransactionException;
@@ -167,7 +166,12 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = new Terminal();
+		if (req.getNnsID() == null) {
+			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		} else {
+			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getNnsID(), toMember);
+		}
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -277,21 +281,22 @@ public class PosPaymentValidation {
 			 */
 			Terminal terminal = new Terminal();
 			if (req.getNnsID() == null) {
-				//POSAcquiring acquiring = baseRepository.getPosRepository().getPosAcquiring(req.getAcquiringID());
+				// POSAcquiring acquiring =
+				// baseRepository.getPosRepository().getPosAcquiring(req.getAcquiringID());
 				/*
 				 * Validate ToMember
 				 */
-				//toMember = memberValidation.validateMemberID(acquiring.getMemberID(), false);
-				//targetMember = toMember;
+				// toMember = memberValidation.validateMemberID(acquiring.getMemberID(), false);
+				// targetMember = toMember;
 				throw new TransactionException(String.valueOf(Status.DESTINATION_MEMBER_NOT_FOUND));
 			} else {
-				 terminal = baseRepository.getPosRepository().getPosTerminalByNNSID(req.getNnsID());
-				 if(terminal == null) {
-					 throw new TransactionException(String.valueOf(Status.DESTINATION_MEMBER_NOT_FOUND));
-				 }
+				terminal = baseRepository.getPosRepository().getPosTerminalByNNSID(req.getNnsID());
+				if (terminal == null) {
+					throw new TransactionException(String.valueOf(Status.DESTINATION_MEMBER_NOT_FOUND));
+				}
 				targetMember = terminal.getToMember();
 			}
-			
+
 			/*
 			 * Validate Trace Number (Save to cache also ?)
 			 */
@@ -353,8 +358,8 @@ public class PosPaymentValidation {
 			 * Regular Fees Processing (Skip this if Priority Fee != null)
 			 */
 
-			FeeResult feeResult = feeProcessor.ProcessFee(transferType, fromMember, targetMember, fromAccount, toAccount,
-					req.getAmount());
+			FeeResult feeResult = feeProcessor.ProcessFee(transferType, fromMember, targetMember, fromAccount,
+					toAccount, req.getAmount());
 			fees = feeResult.getListTotalFees();
 
 			/*
@@ -413,8 +418,8 @@ public class PosPaymentValidation {
 			String trxNo = Utils.GetDate("yyyyMMddkkmmssSSS") + clusterid + Utils.GenerateTransactionNumber();
 
 			Integer transferID = baseRepository.getTransferRepository().createTransfers(req,
-					feeResult.getTransactionAmount(), transferType, fromAccount, toAccount, fromMember, targetMember, trxNo,
-					null, transactionState, wsID);
+					feeResult.getTransactionAmount(), transferType, fromAccount, toAccount, fromMember, targetMember,
+					trxNo, null, transactionState, wsID);
 
 			/*
 			 * Insert Fees (If any)

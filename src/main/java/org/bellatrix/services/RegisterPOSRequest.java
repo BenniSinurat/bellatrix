@@ -1,7 +1,5 @@
 package org.bellatrix.services;
 
-import java.math.BigDecimal;
-
 public class RegisterPOSRequest {
 
 	private String username;
@@ -13,9 +11,24 @@ public class RegisterPOSRequest {
 	private String email;
 	private String msisdn;
 	private String postalCode;
-	private Boolean openPayment;
-	private Boolean fixedAmount;
-	private BigDecimal amount;
+	private String nnsID;
+	private String merchantCategoryCode;
+
+	public String getNnsID() {
+		return nnsID;
+	}
+
+	public void setNnsID(String nnsID) {
+		this.nnsID = nnsID;
+	}
+
+	public String getMerchantCategoryCode() {
+		return merchantCategoryCode;
+	}
+
+	public void setMerchantCategoryCode(String merchantCategoryCode) {
+		this.merchantCategoryCode = merchantCategoryCode;
+	}
 
 	public String getUsername() {
 		return username;
@@ -79,30 +92,6 @@ public class RegisterPOSRequest {
 
 	public void setPostalCode(String postalCode) {
 		this.postalCode = postalCode;
-	}
-
-	public Boolean getOpenPayment() {
-		return openPayment;
-	}
-
-	public void setOpenPayment(Boolean openPayment) {
-		this.openPayment = openPayment;
-	}
-
-	public Boolean getFixedAmount() {
-		return fixedAmount;
-	}
-
-	public void setFixedAmount(Boolean fixedAmount) {
-		this.fixedAmount = fixedAmount;
-	}
-
-	public BigDecimal getAmount() {
-		return amount;
-	}
-
-	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
 	}
 
 	public Integer getTransferTypeID() {

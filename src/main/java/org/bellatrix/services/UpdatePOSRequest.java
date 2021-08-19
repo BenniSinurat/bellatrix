@@ -1,6 +1,5 @@
 package org.bellatrix.services;
 
-import java.math.BigDecimal;
 
 public class UpdatePOSRequest {
 
@@ -14,9 +13,7 @@ public class UpdatePOSRequest {
 	private String email;
 	private String msisdn;
 	private String postalCode;
-	private Boolean openPayment;
-	private Boolean fixedAmount;
-	private BigDecimal amount;
+	private String merchantCategoryCode;
 
 	public String getUsername() {
 		return username;
@@ -90,35 +87,19 @@ public class UpdatePOSRequest {
 		this.postalCode = postalCode;
 	}
 
-	public Boolean getOpenPayment() {
-		return openPayment;
-	}
-
-	public void setOpenPayment(Boolean openPayment) {
-		this.openPayment = openPayment;
-	}
-
-	public Boolean getFixedAmount() {
-		return fixedAmount;
-	}
-
-	public void setFixedAmount(Boolean fixedAmount) {
-		this.fixedAmount = fixedAmount;
-	}
-
-	public BigDecimal getAmount() {
-		return amount;
-	}
-
-	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
-	}
-
 	public Integer getTerminalID() {
 		return terminalID;
 	}
 
 	public void setTerminalID(Integer terminalID) {
 		this.terminalID = terminalID;
+	}
+
+	public String getMerchantCategoryCode() {
+		return merchantCategoryCode;
+	}
+
+	public void setMerchantCategoryCode(String merchantCategoryCode) {
+		this.merchantCategoryCode = merchantCategoryCode;
 	}
 }

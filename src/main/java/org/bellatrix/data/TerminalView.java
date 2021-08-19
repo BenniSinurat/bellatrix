@@ -15,6 +15,8 @@ public class TerminalView {
 	private String email;
 	private String msisdn;
 	private String pic;
+	private String nnsID;
+	private String merchantCategoryCode;
 
 	public Integer getId() {
 		return id;
@@ -102,5 +104,21 @@ public class TerminalView {
 
 	public void setPic(String pic) {
 		this.pic = pic;
+	}
+
+	public String getNnsID() {
+		return nnsID;
+	}
+
+	public void setNnsID(String nnsID) {
+		this.nnsID = nnsID;
+	}
+
+	public String getMerchantCategoryCode() {
+		return merchantCategoryCode;
+	}
+
+	public void setMerchantCategoryCode(String merchantCategoryCode) {
+		this.merchantCategoryCode = merchantCategoryCode;
 	}
 }

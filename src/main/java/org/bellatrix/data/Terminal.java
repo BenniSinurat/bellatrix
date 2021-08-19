@@ -1,7 +1,5 @@
 package org.bellatrix.data;
 
-import java.math.BigDecimal;
-
 public class Terminal {
 
 	private Integer id;
@@ -14,11 +12,8 @@ public class Terminal {
 	private String address;
 	private String city;
 	private String postalCode;
-	private boolean openPayment;
-	private boolean fixedAmount;
-	private BigDecimal amount;
-	
-	private POSAcquiring posAcquiring;
+	private String nnsID;
+	private String merchantCategoryCode;
 
 	public Integer getId() {
 		return id;
@@ -60,14 +55,6 @@ public class Terminal {
 		this.msisdn = msisdn;
 	}
 
-	public boolean isOpenPayment() {
-		return openPayment;
-	}
-
-	public void setOpenPayment(boolean openPayment) {
-		this.openPayment = openPayment;
-	}
-
 	public Integer getTransferTypeID() {
 		return transferTypeID;
 	}
@@ -82,22 +69,6 @@ public class Terminal {
 
 	public void setToMember(Members toMember) {
 		this.toMember = toMember;
-	}
-
-	public boolean isFixedAmount() {
-		return fixedAmount;
-	}
-
-	public void setFixedAmount(boolean fixedAmount) {
-		this.fixedAmount = fixedAmount;
-	}
-
-	public BigDecimal getAmount() {
-		return amount;
-	}
-
-	public void setAmount(BigDecimal amount) {
-		this.amount = amount;
 	}
 
 	public String getCity() {
@@ -124,12 +95,20 @@ public class Terminal {
 		this.email = email;
 	}
 
-	public POSAcquiring getPosAcquiring() {
-		return posAcquiring;
+	public String getNnsID() {
+		return nnsID;
 	}
 
-	public void setPosAcquiring(POSAcquiring posAcquiring) {
-		this.posAcquiring = posAcquiring;
+	public void setNnsID(String nnsID) {
+		this.nnsID = nnsID;
+	}
+
+	public String getMerchantCategoryCode() {
+		return merchantCategoryCode;
+	}
+
+	public void setMerchantCategoryCode(String merchantCategoryCode) {
+		this.merchantCategoryCode = merchantCategoryCode;
 	}
 
 }

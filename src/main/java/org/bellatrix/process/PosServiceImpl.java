@@ -1,6 +1,5 @@
 package org.bellatrix.process;
 
-import java.math.BigDecimal;
 import java.net.SocketTimeoutException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -84,16 +83,13 @@ public class PosServiceImpl implements Pos {
 				tv.setId(terminal.get(i).getId());
 				tv.setAddress(terminal.get(i).getAddress());
 				tv.setName(terminal.get(i).getName());
-				tv.setOpenPayment(terminal.get(i).isOpenPayment());
-				tv.setFixedAmount(terminal.get(i).isFixedAmount());
 				tv.setCity(terminal.get(i).getCity());
 				tv.setPostalCode(terminal.get(i).getPostalCode());
 				tv.setEmail(terminal.get(i).getEmail());
 				tv.setMsisdn(terminal.get(i).getMsisdn());
 				tv.setPic(terminal.get(i).getPic());
-				if (terminal.get(i).isFixedAmount()) {
-					tv.setAmount(terminal.get(i).getAmount());
-				}
+				tv.setNnsID(terminal.get(i).getNnsID());
+				tv.setMerchantCategoryCode(terminal.get(i).getMerchantCategoryCode());
 				ltv.add(tv);
 
 				MemberView toTransfer = new MemberView();
@@ -123,16 +119,13 @@ public class PosServiceImpl implements Pos {
 			tv.setId(terminal.getId());
 			tv.setAddress(terminal.getAddress());
 			tv.setName(terminal.getName());
-			tv.setOpenPayment(terminal.isOpenPayment());
-			tv.setFixedAmount(terminal.isFixedAmount());
 			tv.setCity(terminal.getCity());
 			tv.setPostalCode(terminal.getPostalCode());
 			tv.setEmail(terminal.getEmail());
 			tv.setMsisdn(terminal.getMsisdn());
 			tv.setPic(terminal.getPic());
-			if (terminal.isFixedAmount()) {
-				tv.setAmount(terminal.getAmount());
-			}
+			tv.setNnsID(terminal.getNnsID());
+			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 
 			MemberView toTransfer = new MemberView();
 			toTransfer.setId(terminal.getToMember().getId());
@@ -163,34 +156,25 @@ public class PosServiceImpl implements Pos {
 			Accounts fromAccount = accountValidation.validateAccount(transferType, fromMember, true);
 			Accounts toAccount = accountValidation.validateAccount(transferType, terminal.getToMember(), false);
 			FeeResult fr = null;
-			if (terminal.isOpenPayment() == false) {
-				if (terminal.isFixedAmount()) {
-					fr = feeProcessor.CalculateFee(transferType, fromMember, terminal.getToMember(), fromAccount,
-							toAccount, terminal.getAmount());
-					pir.setInvoiceNumber(null);
-				} else {
-					IMap<String, GeneratePaymentTicketRequest> genMap = instance.getMap("GeneratePaymentMap");
-					if (req.getTicketID() == null) {
-						pir.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-						return pir;
-					}
-					GeneratePaymentTicketRequest gpt = genMap.get(req.getTicketID());
-					if (gpt == null) {
-						pir.setStatus(StatusBuilder.getStatus(Status.PAYMENT_CODE_NOT_FOUND));
-						return pir;
-					}
 
-					fr = feeProcessor.CalculateFee(transferType, fromMember, terminal.getToMember(), fromAccount,
-							toAccount, gpt.getAmount());
-					pir.setInvoiceNumber(gpt.getInvoiceNumber());
-				}
-
-				pir.setFinalAmount(fr.getFinalAmount());
-				pir.setTotalFees(fr.getTotalFees());
-				pir.setTransactionAmount(fr.getTransactionAmount());
-			} else {
-				pir.setInvoiceNumber(null);
+			IMap<String, GeneratePaymentTicketRequest> genMap = instance.getMap("GeneratePaymentMap");
+			if (req.getTicketID() == null) {
+				pir.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+				return pir;
 			}
+			GeneratePaymentTicketRequest gpt = genMap.get(req.getTicketID());
+			if (gpt == null) {
+				pir.setStatus(StatusBuilder.getStatus(Status.PAYMENT_CODE_NOT_FOUND));
+				return pir;
+			}
+
+			fr = feeProcessor.CalculateFee(transferType, fromMember, terminal.getToMember(), fromAccount, toAccount,
+					gpt.getAmount());
+			pir.setInvoiceNumber(gpt.getInvoiceNumber());
+
+			pir.setFinalAmount(fr.getFinalAmount());
+			pir.setTotalFees(fr.getTotalFees());
+			pir.setTransactionAmount(fr.getTransactionAmount());
 
 			MemberView fromTransfer = new MemberView();
 			fromTransfer.setId(fromMember.getId());
@@ -208,10 +192,10 @@ public class PosServiceImpl implements Pos {
 			tv.setId(terminal.getId());
 			tv.setAddress(terminal.getAddress());
 			tv.setName(terminal.getName());
-			tv.setOpenPayment(terminal.isOpenPayment());
-			tv.setFixedAmount(terminal.isFixedAmount());
 			tv.setCity(terminal.getCity());
 			tv.setPostalCode(terminal.getPostalCode());
+			tv.setNnsID(terminal.getNnsID());
+			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 
 			pir.setTerminal(tv);
 			pir.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
@@ -232,31 +216,18 @@ public class PosServiceImpl implements Pos {
 		try {
 			Terminal terminal = posPaymentValidation.validatePosPayment(req);
 
-			if (terminal.isOpenPayment() == true && req.getAmount() == BigDecimal.ZERO) {
-				ppr.setStatus(StatusBuilder.getStatus(Status.INVALID_AMOUNT));
+			if (req.getTicketID() == null) {
+				ppr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+				return ppr;
+			}
+			GeneratePaymentTicketRequest gpt = genMap.get(req.getTicketID());
+			if (gpt == null) {
+				ppr.setStatus(StatusBuilder.getStatus(Status.PAYMENT_CODE_NOT_FOUND));
 				return ppr;
 			}
 
-			if (terminal.isOpenPayment() == false) {
-				if (terminal.isFixedAmount()) {
-					pr.setAmount(terminal.getAmount());
-				} else {
-					if (req.getTicketID() == null) {
-						ppr.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-						return ppr;
-					}
-					GeneratePaymentTicketRequest gpt = genMap.get(req.getTicketID());
-					if (gpt == null) {
-						ppr.setStatus(StatusBuilder.getStatus(Status.PAYMENT_CODE_NOT_FOUND));
-						return ppr;
-					}
-
-					pr.setAmount(gpt.getAmount());
-					pr.setReferenceNumber(gpt.getInvoiceNumber());
-				}
-			} else {
-				pr.setAmount(req.getAmount());
-			}
+			pr.setAmount(gpt.getAmount());
+			pr.setReferenceNumber(gpt.getInvoiceNumber());
 
 			pr.setDescription(req.getDescription() + " " + terminal.getName());
 			pr.setFromMember(req.getFromMember());
@@ -281,10 +252,10 @@ public class PosServiceImpl implements Pos {
 			tv.setId(terminal.getId());
 			tv.setAddress(terminal.getAddress());
 			tv.setName(terminal.getName());
-			tv.setFixedAmount(terminal.isFixedAmount());
-			tv.setOpenPayment(terminal.isOpenPayment());
 			tv.setCity(terminal.getCity());
 			tv.setPostalCode(terminal.getPostalCode());
+			tv.setNnsID(terminal.getNnsID());
+			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 			ppr.setTerminal(tv);
 
 			ppr.setId(pd.getTransferID());
@@ -339,9 +310,6 @@ public class PosServiceImpl implements Pos {
 		PosCreateInvoiceResponse pci = new PosCreateInvoiceResponse();
 		try {
 			Terminal terminal = posPaymentValidation.validatePosTerminal(req, headerParam.value.getToken());
-			if (terminal.isOpenPayment() == true) {
-				pci.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
-			}
 
 			// String ticket = UUID.randomUUID().toString();
 			String ticket = RandomStringUtils.random(25, true, true);
@@ -359,9 +327,10 @@ public class PosServiceImpl implements Pos {
 			tv.setId(terminal.getId());
 			tv.setAddress(terminal.getAddress());
 			tv.setName(terminal.getName());
-			tv.setFixedAmount(terminal.isFixedAmount());
 			tv.setCity(terminal.getCity());
 			tv.setPostalCode(terminal.getPostalCode());
+			tv.setNnsID(terminal.getNnsID());
+			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 
 			MemberView toTransfer = new MemberView();
 			toTransfer.setId(terminal.getToMember().getId());
@@ -372,12 +341,7 @@ public class PosServiceImpl implements Pos {
 			pci.setTerminal(tv);
 			pci.setTicketID(ticket);
 			pci.setToMember(toTransfer);
-
-			if (terminal.isFixedAmount() == false) {
-				pci.setAmount(req.getAmount());
-			} else {
-				pci.setAmount(terminal.getAmount());
-			}
+			pci.setAmount(req.getAmount());
 
 			pci.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return pci;
@@ -399,20 +363,8 @@ public class PosServiceImpl implements Pos {
 	public void updatePOS(Holder<Header> headerParam, UpdatePOSRequest req) throws Exception {
 		Terminal terminal = posPaymentValidation.validatePosTerminal(req, headerParam.value.getToken());
 
-		if (req.getFixedAmount() == null) {
-			req.setFixedAmount(terminal.isFixedAmount());
-		}
-
-		if (req.getOpenPayment() == null) {
-			req.setOpenPayment(terminal.isOpenPayment());
-		}
-
 		if (req.getAddress() == null) {
 			req.setAddress(terminal.getAddress());
-		}
-
-		if (req.getAmount() == BigDecimal.ZERO) {
-			req.setAmount(terminal.getAmount());
 		}
 
 		if (req.getCity() == null) {
@@ -442,7 +394,11 @@ public class PosServiceImpl implements Pos {
 		if (req.getTransferTypeID() == null) {
 			req.setTerminalID(terminal.getTransferTypeID());
 		}
-
+		
+		if(req.getMerchantCategoryCode() == null) {
+			req.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
+		}
+		
 		baseRepository.getPosRepository().updatePOS(req, terminal.getToMember().getId());
 	}
 
@@ -451,7 +407,7 @@ public class PosServiceImpl implements Pos {
 		Terminal terminal = posPaymentValidation.validatePosTerminal(req, headerParam.value.getToken());
 		baseRepository.getPosRepository().deletePOS(req, terminal.getToMember().getId());
 	}
-	
+
 	@Override
 	@Transactional
 	public PaymentResponse doPaymentQRIS(Holder<Header> headerParam, PaymentRequest req) {
@@ -459,7 +415,7 @@ public class PosServiceImpl implements Pos {
 		PaymentDetails pd = null;
 		try {
 			String trxState = "";
-			if(req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
+			if (req.getStatus() == null || req.getStatus().equalsIgnoreCase("")) {
 				trxState = "PROCESSED";
 			} else {
 				trxState = "PENDING";
