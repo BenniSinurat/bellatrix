@@ -90,6 +90,7 @@ public class PosServiceImpl implements Pos {
 				tv.setPic(terminal.get(i).getPic());
 				tv.setNnsID(terminal.get(i).getNnsID());
 				tv.setMerchantCategoryCode(terminal.get(i).getMerchantCategoryCode());
+				tv.setTransferTypeID(terminal.get(i).getTransferTypeID());
 				ltv.add(tv);
 
 				MemberView toTransfer = new MemberView();
@@ -126,6 +127,7 @@ public class PosServiceImpl implements Pos {
 			tv.setPic(terminal.getPic());
 			tv.setNnsID(terminal.getNnsID());
 			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
+			tv.setTransferTypeID(terminal.getTransferTypeID());
 
 			MemberView toTransfer = new MemberView();
 			toTransfer.setId(terminal.getToMember().getId());

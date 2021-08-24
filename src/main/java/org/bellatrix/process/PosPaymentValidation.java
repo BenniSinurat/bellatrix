@@ -159,18 +159,19 @@ public class PosPaymentValidation {
 		webserviceValidation.validateWebservice(token);
 
 		/*
-		 * Validate ToMember
-		 */
-		Members toMember = memberValidation.validateMember(req.getToMember(), false);
-
-		/*
-		 * Validate Terminal ID
+		 * Validate ToMember dan Terminal ID
 		 */
 		Terminal terminal = new Terminal();
 		if (req.getNnsID() == null) {
+			Members toMember = memberValidation.validateMember(req.getToMember(), false);
 			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
 		} else {
-			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getNnsID(), toMember);
+			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getNnsID());
+			if (terminal == null) {
+				throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
+			}
+			Members toMember = memberValidation.validateMemberID(terminal.getToMember().getId(), false);
+			terminal.setToMember(toMember);
 		}
 
 		if (terminal == null) {

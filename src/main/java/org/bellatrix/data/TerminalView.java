@@ -17,6 +17,7 @@ public class TerminalView {
 	private String pic;
 	private String nnsID;
 	private String merchantCategoryCode;
+	private Integer transferTypeID;
 
 	public Integer getId() {
 		return id;
@@ -120,5 +121,13 @@ public class TerminalView {
 
 	public void setMerchantCategoryCode(String merchantCategoryCode) {
 		this.merchantCategoryCode = merchantCategoryCode;
+	}
+
+	public Integer getTransferTypeID() {
+		return transferTypeID;
+	}
+
+	public void setTransferTypeID(Integer transferTypeID) {
+		this.transferTypeID = transferTypeID;
 	}
 }

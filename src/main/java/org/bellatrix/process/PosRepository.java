@@ -150,14 +150,13 @@ public class PosRepository {
 		}
 	}
 
-	public Terminal getPosTerminalDetail(String nnsID, Members member) {
+	public Terminal getPosTerminalDetail(String nnsID) {
 		try {
 			Terminal terminal = this.jdbcTemplate.queryForObject("select * from pos_terminal where nns_id = ?",
 					new Object[] { nnsID }, new RowMapper<Terminal>() {
 						public Terminal mapRow(ResultSet rs, int rowNum) throws SQLException {
 							Terminal terminal = new Terminal();
 							terminal.setId(rs.getInt("id"));
-							terminal.setToMember(member);
 							terminal.setAddress(rs.getString("outlet_address"));
 							terminal.setCity(rs.getString("outlet_city"));
 							terminal.setPostalCode(rs.getString("postal_code"));
@@ -168,7 +167,10 @@ public class PosRepository {
 							terminal.setTransferTypeID(rs.getInt("transfer_type_id"));
 							terminal.setNnsID(rs.getString("nns_id"));
 							terminal.setMerchantCategoryCode(rs.getString("merchant_category_code"));
-
+							
+							Members toMember = new Members();
+							toMember.setId(rs.getInt("member_id"));
+							terminal.setToMember(toMember);
 							return terminal;
 						}
 					});

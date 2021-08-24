@@ -57,7 +57,6 @@ org/bellatrix/services/LoadMerchantSubCategoryRequest.class
 org/bellatrix/services/VARegisterBankRequest.class
 org/bellatrix/services/LoadPermissionByWebServicesRequest.class
 org/bellatrix/process/LogRepository.class
-org/bellatrix/data/POSAcquiring.class
 org/bellatrix/data/RegisterVADoc.class
 org/bellatrix/process/AccessRepository$5.class
 org/bellatrix/services/RequestPaymentConfirmationResponse.class
