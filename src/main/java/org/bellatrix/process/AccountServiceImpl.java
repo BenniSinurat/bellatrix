@@ -256,6 +256,7 @@ public class AccountServiceImpl implements Account {
 				trfHistory.setTransactionNumber(trf.get(i).getTransactionNumber());
 				trfHistory.setTransactionState(trf.get(i).getTransactionState());
 				trfHistory.setReferenceNumber(trf.get(i).getReferenceNumber());
+				trfHistory.setRemark(trf.get(i).getRemark());
 				lth.add(trfHistory);
 			}
 

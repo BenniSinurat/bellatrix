@@ -37,6 +37,7 @@ public class PaymentDetails implements Serializable {
 	private Terminal terminal;
 	private String ticketID;
 	private String description;
+	private String remark;
 
 	public Members getFromMember() {
 		return fromMember;
@@ -180,6 +181,14 @@ public class PaymentDetails implements Serializable {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

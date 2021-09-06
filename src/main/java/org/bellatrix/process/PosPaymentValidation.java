@@ -216,13 +216,13 @@ public class PosPaymentValidation {
 		 * Validate FromAccount
 		 */
 		accountValidation.validateAccount(transferType, fromMember, true);
-		if (transferType.getFromAccounts() != transferType.getToAccounts()) {
+		//if (transferType.getFromAccounts() != transferType.getToAccounts()) {
 
 			/*
 			 * Validate ToAccount
 			 */
 			accountValidation.validateAccount(transferType, toMember, false);
-		}
+		//}
 
 		return terminal;
 	}
@@ -327,15 +327,15 @@ public class PosPaymentValidation {
 			 */
 			fromAccount = accountValidation.validateAccount(transferType, fromMember, true);
 
-			if (transferType.getFromAccounts() != transferType.getToAccounts()) {
+			//if (transferType.getFromAccounts() != transferType.getToAccounts()) {
 
 				/*
 				 * Validate ToAccount
 				 */
 				toAccount = accountValidation.validateAccount(transferType, targetMember, false);
-			} else {
-				toAccount = fromAccount;
-			}
+			//} else {
+			//	toAccount = fromAccount;
+			//}
 
 			/*
 			 * Lock Member

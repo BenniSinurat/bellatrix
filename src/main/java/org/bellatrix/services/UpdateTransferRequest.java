@@ -6,6 +6,7 @@ public class UpdateTransferRequest {
 	private String referenceNumber;
 	private String transactionState;
 	private String description;
+	private String remark;
 
 	public Integer getTransferID() {
 		return transferID;
@@ -37,6 +38,14 @@ public class UpdateTransferRequest {
 
 	public void setDescription(String description) {
 		this.description = description;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

@@ -298,7 +298,7 @@ public class InterBankServiceImpl implements InterBank {
 
 			mapLrpcMap.remove(req.getUsername() + req.getAccountNumber());
 			BankTransferRequest bank = interbankValidation.validateTransferBank(headerParam.value.getToken(), req);
-
+			
 			PaymentRequest pr = new PaymentRequest();
 			pr.setAccessTypeID(req.getAccessTypeID());
 			pr.setAmount(req.getAmount());
@@ -318,10 +318,10 @@ public class InterBankServiceImpl implements InterBank {
 			 * INSERT Pending Transfers
 			 */
 			PaymentDetails pd = paymentValidation.validatePayment(pr, headerParam.value.getToken(), "PENDING");
-
+			
 			Map<String, Object> bankMap = new HashMap<String, Object>();
 			bankMap.put("toAccountNumber", bank.getToAccountNumber());
-			bankMap.put("toAccountName", bank.getToAccountName());
+			bankMap.put("toAccountName", req.getAccountName());
 			bankMap.put("toResidentStatus", bank.getToResidentStatus());
 			bankMap.put("toProfileType", bank.getToProfileType());
 			bankMap.put("toEmailAddress", pd.getFromMember().getEmail());

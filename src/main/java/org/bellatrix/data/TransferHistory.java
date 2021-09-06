@@ -23,6 +23,7 @@ public class TransferHistory {
 	private String formattedTransactionDate;
 	private List<PaymentFields> customFields;
 	private String referenceNumber;
+	private String remark;
 
 	public Date getTransactionDate() {
 		return transactionDate;
@@ -158,6 +159,14 @@ public class TransferHistory {
 
 	public void setReferenceNumber(String referenceNumber) {
 		this.referenceNumber = referenceNumber;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

@@ -93,7 +93,7 @@ public class TransferRepository {
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
 				if (req.getBillingID() == null) {
 					PreparedStatement statement = con.prepareStatement(
-							"insert into transfers (transfer_type_id, from_account_id, to_account_id, from_member_id, to_member_id, trace_number, transaction_number, parent_id, transaction_state, description, amount, custom_field, reference_number, originator, billing_id, transaction_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)",
+							"insert into transfers (transfer_type_id, from_account_id, to_account_id, from_member_id, to_member_id, trace_number, transaction_number, parent_id, transaction_state, description, remark, amount, custom_field, reference_number, originator, billing_id, transaction_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?)",
 							Statement.RETURN_GENERATED_KEYS);
 					statement.setInt(1, trxType.getId());
 					statement.setInt(2, fromAccount.getId());
@@ -105,15 +105,16 @@ public class TransferRepository {
 					statement.setString(8, parentID);
 					statement.setString(9, trxState);
 					statement.setString(10, req.getDescription());
-					statement.setBigDecimal(11, amount);
-					statement.setBoolean(12, useCustomField);
-					statement.setString(13, req.getReferenceNumber());
-					statement.setString(14, req.getOriginator());
-					statement.setTimestamp(15, Timestamp.valueOf(trxDate));
+					statement.setString(11, req.getRemark());
+					statement.setBigDecimal(12, amount);
+					statement.setBoolean(13, useCustomField);
+					statement.setString(14, req.getReferenceNumber());
+					statement.setString(15, req.getOriginator());
+					statement.setTimestamp(16, Timestamp.valueOf(trxDate));
 					return statement;
 				} else {
 					PreparedStatement statement = con.prepareStatement(
-							"insert into transfers (transfer_type_id, from_account_id, to_account_id, from_member_id, to_member_id, trace_number, transaction_number, parent_id, transaction_state, description, amount, custom_field, reference_number, originator, billing_id, transaction_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+							"insert into transfers (transfer_type_id, from_account_id, to_account_id, from_member_id, to_member_id, trace_number, transaction_number, parent_id, transaction_state, description, remark, amount, custom_field, reference_number, originator, billing_id, transaction_date) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 							Statement.RETURN_GENERATED_KEYS);
 					statement.setInt(1, trxType.getId());
 					statement.setInt(2, fromAccount.getId());
@@ -125,12 +126,13 @@ public class TransferRepository {
 					statement.setString(8, parentID);
 					statement.setString(9, trxState);
 					statement.setString(10, req.getDescription());
-					statement.setBigDecimal(11, amount);
-					statement.setBoolean(12, useCustomField);
-					statement.setString(13, req.getReferenceNumber());
-					statement.setString(14, req.getOriginator());
-					statement.setInt(15, req.getBillingID());
-					statement.setTimestamp(16, Timestamp.valueOf(trxDate));
+					statement.setString(11, req.getRemark());
+					statement.setBigDecimal(12, amount);
+					statement.setBoolean(13, useCustomField);
+					statement.setString(14, req.getReferenceNumber());
+					statement.setString(15, req.getOriginator());
+					statement.setInt(16, req.getBillingID());
+					statement.setTimestamp(17, Timestamp.valueOf(trxDate));
 					return statement;
 				}
 			}
@@ -351,6 +353,7 @@ public class TransferRepository {
 							transfers.setAmount(rs.getBigDecimal("amount"));
 							transfers.setChargedBack(rs.getBoolean("charged_back"));
 							transfers.setDescription(rs.getString("description"));
+							transfers.setRemark(rs.getString("remark"));
 							transfers.setFromAccountID(rs.getInt("from_account_id"));
 							transfers.setFromMemberID(rs.getInt("from_member_id"));
 							transfers.setId(rs.getInt("id"));
@@ -375,8 +378,8 @@ public class TransferRepository {
 	
 	public void updateTransfers(UpdateTransferRequest req, String trxNo) {
 		this.jdbcTemplate.update(
-				"update transfers set transaction_state = ?, reference_number = ?, description = ? where id = ?",
-				new Object[] { req.getTransactionState(),req.getReferenceNumber(), req.getDescription(), req.getTransferID() });
+				"update transfers set transaction_state = ?, reference_number = ?, description = ?, remark = ? where id = ?",
+				new Object[] { req.getTransactionState(),req.getReferenceNumber(), req.getDescription(), req.getRemark(), req.getTransferID() });
 		
 		this.jdbcTemplate.update(
 				"update transfers set transaction_state = ? where parent_id = ?",

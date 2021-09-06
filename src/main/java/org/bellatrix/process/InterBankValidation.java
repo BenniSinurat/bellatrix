@@ -87,15 +87,15 @@ public class InterBankValidation {
 		 */
 		Accounts fromAccount = accountValidation.validateAccount(transferType, fromMember, true);
 		Accounts toAccount = null;
-		if (transferType.getFromAccounts() != transferType.getToAccounts()) {
+		//if (transferType.getFromAccounts() != transferType.getToAccounts()) {
 
 			/*
 			 * Validate ToAccount
 			 */
 			toAccount = accountValidation.validateAccount(transferType, toMember, false);
-		} else {
-			toAccount = fromAccount;
-		}
+		//} else {
+		//	toAccount = fromAccount;
+		//}
 
 		/*
 		 * PRIORITY Fees Processing (if Priority Fee != null then skip the

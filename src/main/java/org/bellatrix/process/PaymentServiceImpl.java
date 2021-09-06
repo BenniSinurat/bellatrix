@@ -100,6 +100,7 @@ public class PaymentServiceImpl implements Payment {
 			pr.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			pr.setAmount(pd.getFees().getFinalAmount());
 			pr.setDescription(pd.getRequest().getDescription());
+			pr.setRemark(pd.getRequest().getRemark());
 			MemberView fromTransfer = new MemberView();
 			fromTransfer.setId(pd.getFromMember().getId());
 			fromTransfer.setName(pd.getFromMember().getName());
@@ -823,6 +824,10 @@ public class PaymentServiceImpl implements Payment {
 			
 			if(req.getTransactionState() == null) {
 				req.setTransactionState(t.getTransactionState());
+			}
+			
+			if(req.getRemark() == null) {
+				req.setRemark(t.getRemark());
 			}
 			baseRepository.getTransferRepository().updateTransfers(req, t.getTransactionNumber());
 		} catch (DataIntegrityViolationException e) {

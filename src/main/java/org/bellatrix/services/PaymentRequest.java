@@ -22,6 +22,7 @@ public class PaymentRequest implements Serializable {
 	private String traceNumber;
 	private String referenceNumber;
 	private String description;
+	private String remark;
 	private String originator;
 	private Date transactionDate;
 	private List<PaymentFields> paymentFields;
@@ -156,6 +157,14 @@ public class PaymentRequest implements Serializable {
 
 	public void setAcquiringID(String acquiringID) {
 		this.acquiringID = acquiringID;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

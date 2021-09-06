@@ -2,7 +2,6 @@ package org.bellatrix.services;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 import org.bellatrix.data.MemberView;
 import org.bellatrix.data.PaymentFields;
@@ -19,6 +18,7 @@ public class PaymentResponse implements Serializable {
 	private MemberView fromMember;
 	private MemberView toMember;
 	private String description;
+	private String remark;
 	private BigDecimal amount;
 	private BigDecimal finalAmount;
 	private BigDecimal totalFees;
@@ -122,6 +122,14 @@ public class PaymentResponse implements Serializable {
 
 	public void setId(Integer id) {
 		this.id = id;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

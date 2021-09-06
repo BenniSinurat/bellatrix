@@ -37,6 +37,7 @@ public class Transfers {
 	private String reverseByName;
 	
 	private String referenceNumber;
+	private String remark;
 
 	public Date getTransactionDate() {
 		return transactionDate;
@@ -252,6 +253,14 @@ public class Transfers {
 
 	public void setReferenceNumber(String referenceNumber) {
 		this.referenceNumber = referenceNumber;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }
