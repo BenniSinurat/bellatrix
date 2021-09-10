@@ -253,6 +253,33 @@ public class BillPaymentRepository {
 			return null;
 		}
 	}
+	
+	public List<PaymentChannelPermissions> listPermissionByPaymentChannel(Integer id, String binPrefix) {
+		try {
+			List<PaymentChannelPermissions> channel = this.jdbcTemplate.query(
+					"select cp.id, cp.channel_id, cp.transfer_type_id, t.name as transfer_type_name, cp.member_id, m.username, m.name, cp.inquiry_url, cp.payment_url, cp.reversed_url, cp.bin_prefix from payment_channel_permissions cp inner join transfer_types t on t.id = cp.transfer_type_id inner join members m on m.id = cp.member_id where channel_id = ? and bin_prefix = ? and cp.enabled = true",
+					new Object[] { id, binPrefix }, new RowMapper<PaymentChannelPermissions>() {
+						public PaymentChannelPermissions mapRow(ResultSet rs, int rowNum) throws SQLException {
+							PaymentChannelPermissions p = new PaymentChannelPermissions();
+							p.setId(rs.getInt("id"));
+							p.setChannelID(rs.getInt("channel_id"));
+							p.setTransferTypeID(rs.getInt("transfer_type_id"));
+							p.setTransferTypeName(rs.getString("transfer_type_name"));
+							p.setMemberID(rs.getInt("member_id"));
+							p.setMemberName(rs.getString("name"));
+							p.setMemberUsername(rs.getString("username"));
+							p.setBinPrefix(rs.getString("bin_prefix"));
+							p.setInquiryURL(rs.getString("inquiry_url"));
+							p.setPaymentURL(rs.getString("payment_url"));
+							p.setReversedURL(rs.getString("reversed_url"));
+							return p;
+						}
+					});
+			return channel;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
 
 	@Autowired
 	public void setDataSource(DataSource dataSource) {

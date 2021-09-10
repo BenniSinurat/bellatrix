@@ -188,8 +188,16 @@ public class BillPaymentServiceImpl implements BillPayment {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			billPaymentValidation.validatePaymentChannel(req.getChannelID());
-			List<PaymentChannelPermissions> channelPermission = baseRepository.getBillPaymentRepository()
+			
+			List<PaymentChannelPermissions> channelPermission = new LinkedList<PaymentChannelPermissions>();
+			if(req.getBinPrefix() == null) {
+				channelPermission = baseRepository.getBillPaymentRepository()
 					.listPermissionByPaymentChannel(req.getChannelID());
+			}else {
+				channelPermission = baseRepository.getBillPaymentRepository()
+						.listPermissionByPaymentChannel(req.getChannelID(), req.getBinPrefix());
+			}
+			
 			res.setPaymentChannelPermission(channelPermission);
 			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 		} catch (Exception e) {

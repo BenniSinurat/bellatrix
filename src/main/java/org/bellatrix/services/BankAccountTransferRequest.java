@@ -14,6 +14,7 @@ public class BankAccountTransferRequest {
 	private Integer accessTypeID;
 	private String credential;
 	private String otp;
+	private String remark;
 
 	public String getUsername() {
 		return username;
@@ -93,6 +94,14 @@ public class BankAccountTransferRequest {
 
 	public void setOtp(String otp) {
 		this.otp = otp;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
 	}
 
 }

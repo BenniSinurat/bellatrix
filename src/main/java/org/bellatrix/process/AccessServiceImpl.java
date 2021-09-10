@@ -143,6 +143,24 @@ public class AccessServiceImpl implements Access {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			Members member = memberValidation.validateMember(req.getUsername(), true);
 			
+			Accesses access = baseRepository.getAccessRepository().loadCredentialByUsername(req.getUsername(),
+					req.getAccessTypeID());
+			if (access == null) {
+				reset.setStatus(StatusBuilder.getStatus(Status.INVALID_PARAMETER));
+				return reset;
+			}
+
+			if (baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID()).getName()
+					.equalsIgnoreCase("CLOSED")) {
+				reset.setStatus(StatusBuilder.getStatus(Status.BLOCKED));
+				return reset;
+			}
+
+			if (access.isBlocked()) {
+				reset.setStatus(StatusBuilder.getStatus(Status.BLOCKED));
+				return reset;
+			}
+			
 			Groups group = baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID());
 			if(req.getNewCredential() == null || req.getNewCredential().equalsIgnoreCase("")) {
 				newPin = Utils.GenerateRandomNumber(group.getPinLength());
@@ -271,8 +289,8 @@ public class AccessServiceImpl implements Access {
 			client.dispatch("NotificationVM", notifMap, header);
 
 			baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
-			baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
-			baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+			//baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
+			//baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
 
 			reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return reset;

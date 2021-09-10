@@ -313,6 +313,7 @@ public class InterBankServiceImpl implements InterBank {
 			} else {
 				pr.setDescription(req.getDescription());
 			}
+			pr.setRemark(req.getRemark());
 
 			/*
 			 * INSERT Pending Transfers

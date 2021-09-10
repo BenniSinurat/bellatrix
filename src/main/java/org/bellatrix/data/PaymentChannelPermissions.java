@@ -15,6 +15,10 @@ public class PaymentChannelPermissions implements Serializable {
 	private Integer memberID;
 	private String memberName;
 	private String memberUsername;
+	private String binPrefix;
+	private String inquiryURL;
+	private String paymentURL;
+	private String reversedURL;
 
 	public Integer getId() {
 		return id;
@@ -70,6 +74,38 @@ public class PaymentChannelPermissions implements Serializable {
 
 	public void setMemberUsername(String memberUsername) {
 		this.memberUsername = memberUsername;
+	}
+
+	public String getBinPrefix() {
+		return binPrefix;
+	}
+
+	public void setBinPrefix(String binPrefix) {
+		this.binPrefix = binPrefix;
+	}
+
+	public String getInquiryURL() {
+		return inquiryURL;
+	}
+
+	public void setInquiryURL(String inquiryURL) {
+		this.inquiryURL = inquiryURL;
+	}
+
+	public String getPaymentURL() {
+		return paymentURL;
+	}
+
+	public void setPaymentURL(String paymentURL) {
+		this.paymentURL = paymentURL;
+	}
+
+	public String getReversedURL() {
+		return reversedURL;
+	}
+
+	public void setReversedURL(String reversedURL) {
+		this.reversedURL = reversedURL;
 	}
 
 	public static long getSerialversionuid() {
