@@ -14,7 +14,7 @@ public class ScheduleTransfer implements Serializable {
 	private String accountNo;
 	private String accountName;
 	private boolean enabled;
-	private String scheduletDate;
+	private String scheduleDate;
 
 	public Integer getId() {
 		return id;
@@ -72,12 +72,12 @@ public class ScheduleTransfer implements Serializable {
 		this.enabled = enabled;
 	}
 
-	public String getScheduletDate() {
-		return scheduletDate;
+	public String getScheduleDate() {
+		return scheduleDate;
 	}
 
-	public void setScheduletDate(String scheduletDate) {
-		this.scheduletDate = scheduletDate;
+	public void setScheduleDate(String scheduleDate) {
+		this.scheduleDate = scheduleDate;
 	}
 
 }

@@ -568,7 +568,7 @@ public class InterBankServiceImpl implements InterBank {
 			}
 
 			TransferTypes transferType = baseRepository.getTransferTypeRepository()
-					.findTransferTypeByID(req.getTranferTypeID());
+					.findTransferTypeByID(req.getTransferTypeID());
 			if (transferType == null) {
 				throw new TransactionException(String.valueOf(Status.INVALID_TRANSFER_TYPE));
 			}
@@ -595,14 +595,14 @@ public class InterBankServiceImpl implements InterBank {
 			}
 			req.setId(transfers.getId());
 
-			if (req.getTranferTypeID() != null && req.getTranferTypeID() != transfers.getTransferTypeID()) {
+			if (req.getTransferTypeID() != null && req.getTransferTypeID() != transfers.getTransferTypeID()) {
 				TransferTypes transferType = baseRepository.getTransferTypeRepository()
-						.findTransferTypeByID(req.getTranferTypeID());
+						.findTransferTypeByID(req.getTransferTypeID());
 				if (transferType == null) {
 					throw new TransactionException(String.valueOf(Status.INVALID_TRANSFER_TYPE));
 				}
 			} else {
-				req.setTranferTypeID(transfers.getTransferTypeID());
+				req.setTransferTypeID(transfers.getTransferTypeID());
 			}
 
 			if (req.getFromMemberID() != null && req.getFromMemberID() != transfers.getFromMemberID()) {
@@ -639,7 +639,7 @@ public class InterBankServiceImpl implements InterBank {
 			req.setEnabled(req.isEnabled());
 			
 			if(req.getScheduleDate() == null) {
-				req.setScheduleDate(transfers.getScheduletDate());
+				req.setScheduleDate(transfers.getScheduleDate());
 			}
 
 			baseRepository.getInterBankRepository().updateScheduleTransfer(req);
@@ -671,6 +671,10 @@ public class InterBankServiceImpl implements InterBank {
 			}
 			List<ScheduleTransfer> list = baseRepository.getInterBankRepository().findScheduleTransfer("from_member_id",
 					member.getId());
+			if(list.isEmpty()) {
+				throw new TransactionException(String.valueOf(Status.SCHEDULED_TRANSFER_NOT_FOUND));
+			}
+			
 			res.setScheduleTransfers(list);
 			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return res;
@@ -688,7 +692,10 @@ public class InterBankServiceImpl implements InterBank {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			ScheduleTransfer st = baseRepository.getInterBankRepository().findOneScheduleTransfer("id", req.getId());
-
+			
+			if(st == null) {
+				throw new TransactionException(String.valueOf(Status.SCHEDULED_TRANSFER_NOT_FOUND));
+			}
 			res.setScheduleTransfers(st);
 			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			

@@ -208,7 +208,7 @@ public class InterBankRepository {
 						"insert into schedule_transfer (from_member_id, transfer_type_id, bank_id, account_no, account_name, schedule_date, enabled) values (?, ?, ?, ?, ?, ?, ?)",
 						Statement.RETURN_GENERATED_KEYS);
 				statement.setInt(1, transfers.getFromMemberID());
-				statement.setInt(2, transfers.getTranferTypeID());
+				statement.setInt(2, transfers.getTransferTypeID());
 				statement.setInt(3, transfers.getBankID());
 				statement.setString(4, transfers.getAccountNo());
 				statement.setString(5, transfers.getAccountName());
@@ -228,7 +228,7 @@ public class InterBankRepository {
 		final UpdateScheduleTransfer transfer = req;
 		jdbcTemplate.update(
 				"update schedule_transfer set from_member_id = ?, transfer_type_id = ?, bank_id = ?, account_no = ?, account_name = ?, schedule_date = ?, enabled = ? where id = ?",
-				transfer.getFromMemberID(), transfer.getTranferTypeID(), transfer.getBankID(), transfer.getAccountNo(),
+				transfer.getFromMemberID(), transfer.getTransferTypeID(), transfer.getBankID(), transfer.getAccountNo(),
 				transfer.getAccountName(), Timestamp.valueOf(transfer.getScheduleDate()), transfer.isEnabled(), transfer.getId());
 	}
 
@@ -246,7 +246,7 @@ public class InterBankRepository {
 							transfers.setId(rs.getInt("id"));
 							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
 							transfers.setEnabled(rs.getBoolean("enabled"));
-							transfers.setScheduletDate(rs.getString("schedule_date"));
+							transfers.setScheduleDate(rs.getString("schedule_date"));
 							return transfers;
 						}
 					});
@@ -270,7 +270,7 @@ public class InterBankRepository {
 							transfers.setId(rs.getInt("id"));
 							transfers.setTransferTypeID(rs.getInt("transfer_type_id"));
 							transfers.setEnabled(rs.getBoolean("enabled"));
-							transfers.setScheduletDate(rs.getString("schedule_date"));
+							transfers.setScheduleDate(rs.getString("schedule_date"));
 							return transfers;
 						}
 					});

@@ -3,7 +3,7 @@ package org.bellatrix.services;
 public class UpdateScheduleTransfer {
 	private Integer id;
 	private Integer fromMemberID;
-	private Integer tranferTypeID;
+	private Integer transferTypeID;
 	private Integer bankID;
 	private String accountNo;
 	private String accountName;
@@ -26,12 +26,12 @@ public class UpdateScheduleTransfer {
 		this.fromMemberID = fromMemberID;
 	}
 
-	public Integer getTranferTypeID() {
-		return tranferTypeID;
+	public Integer getTransferTypeID() {
+		return transferTypeID;
 	}
 
-	public void setTranferTypeID(Integer tranferTypeID) {
-		this.tranferTypeID = tranferTypeID;
+	public void setTransferTypeID(Integer transferTypeID) {
+		this.transferTypeID = transferTypeID;
 	}
 
 	public Integer getBankID() {

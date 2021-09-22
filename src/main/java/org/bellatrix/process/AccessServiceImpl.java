@@ -81,6 +81,11 @@ public class AccessServiceImpl implements Access {
 				return validateResponse;
 			}
 
+			if (accessValidation.validateBruteForce(members.getId(), req.getAccessTypeID()) == false) {
+				validateResponse.setStatus(StatusBuilder.getStatus(Status.ACCESS_DENIED));
+				return validateResponse;
+			}
+
 			if (baseRepository.getGroupsRepository().loadGroupsByID(members.getGroupID()).getName()
 					.equalsIgnoreCase("CLOSED")) {
 				validateResponse.setStatus(StatusBuilder.getStatus(Status.BLOCKED));
@@ -93,18 +98,13 @@ public class AccessServiceImpl implements Access {
 			}
 
 			if (!access.getPin().equals(Utils.getMD5Hash(req.getCredential()))) {
-
-				if (accessValidation.validateBruteForce(members.getId(), req.getAccessTypeID()) == false) {
-					validateResponse.setStatus(StatusBuilder.getStatus(Status.ACCESS_DENIED));
-					return validateResponse;
-				}
-
 				accessValidation.blockAttemptValidation(members.getId(), req.getAccessTypeID());
 				validateResponse.setStatus(StatusBuilder.getStatus(Status.INVALID));
 				return validateResponse;
 			}
 
 			validateResponse.setStatus(StatusBuilder.getStatus(Status.VALID));
+			baseRepository.getAccessRepository().clearAccessAttemptsRecord(members.getId(), req.getAccessTypeID());
 			return validateResponse;
 		} catch (TransactionException e) {
 			validateResponse.setStatus(StatusBuilder.getStatus(e.getMessage()));
@@ -142,7 +142,7 @@ public class AccessServiceImpl implements Access {
 			String newPin = "";
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			Members member = memberValidation.validateMember(req.getUsername(), true);
-			
+
 			Accesses access = baseRepository.getAccessRepository().loadCredentialByUsername(req.getUsername(),
 					req.getAccessTypeID());
 			if (access == null) {
@@ -160,9 +160,9 @@ public class AccessServiceImpl implements Access {
 				reset.setStatus(StatusBuilder.getStatus(Status.BLOCKED));
 				return reset;
 			}
-			
+
 			Groups group = baseRepository.getGroupsRepository().loadGroupsByID(member.getGroupID());
-			if(req.getNewCredential() == null || req.getNewCredential().equalsIgnoreCase("")) {
+			if (req.getNewCredential() == null || req.getNewCredential().equalsIgnoreCase("")) {
 				newPin = Utils.GenerateRandomNumber(group.getPinLength());
 			} else {
 				newPin = req.getNewCredential();
@@ -190,15 +190,18 @@ public class AccessServiceImpl implements Access {
 								notifMap.put("notification", lm);
 								notifMap.put("msisdn", member.getMsisdn());
 								notifMap.put("pin", newPin);
-								
+
 								MuleClient client;
 								client = new MuleClient(configurator.getMuleContext());
 								Map<String, Object> header = new HashMap<String, Object>();
 								client.dispatch("NotificationVM", notifMap, header);
 
-								baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
-								baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
-								baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+								baseRepository.getAccessRepository().changeCredential(member.getId(),
+										req.getAccessTypeID(), newPin);
+								baseRepository.getAccessRepository().unblockCredential(member.getId(),
+										req.getAccessTypeID());
+								baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(),
+										req.getAccessTypeID());
 
 								reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 								return reset;
@@ -233,15 +236,18 @@ public class AccessServiceImpl implements Access {
 							notifMap.put("notification", lm);
 							notifMap.put("msisdn", member.getMsisdn());
 							notifMap.put("pin", newPin);
-							
+
 							MuleClient client;
 							client = new MuleClient(configurator.getMuleContext());
 							Map<String, Object> header = new HashMap<String, Object>();
 							client.dispatch("NotificationVM", notifMap, header);
 
-							baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
-							baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
-							baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+							baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(),
+									newPin);
+							baseRepository.getAccessRepository().unblockCredential(member.getId(),
+									req.getAccessTypeID());
+							baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(),
+									req.getAccessTypeID());
 
 							reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 							return reset;
@@ -289,8 +295,10 @@ public class AccessServiceImpl implements Access {
 			client.dispatch("NotificationVM", notifMap, header);
 
 			baseRepository.getAccessRepository().changeCredential(member.getId(), req.getAccessTypeID(), newPin);
-			//baseRepository.getAccessRepository().unblockCredential(member.getId(), req.getAccessTypeID());
-			//baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(), req.getAccessTypeID());
+			// baseRepository.getAccessRepository().unblockCredential(member.getId(),
+			// req.getAccessTypeID());
+			// baseRepository.getAccessRepository().clearAccessAttemptsRecord(member.getId(),
+			// req.getAccessTypeID());
 
 			reset.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return reset;

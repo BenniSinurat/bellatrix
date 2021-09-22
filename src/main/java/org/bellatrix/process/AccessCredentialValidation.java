@@ -24,9 +24,9 @@ public class AccessCredentialValidation {
 	public void blockAttemptValidation(Integer memberID, Integer accessTypeID) {
 		Groups group = baseRepository.getGroupsRepository().loadGroupsByMemberID(memberID);
 		Integer count = baseRepository.getAccessRepository().countFailedAccessAttempts(memberID, accessTypeID);
-		if (count + 1 >= group.getMaxPinTries()) {
+		if (count + 1 > group.getMaxPinTries()) {
 			baseRepository.getAccessRepository().blockCredential(memberID, accessTypeID);
-			baseRepository.getAccessRepository().clearAccessAttemptsRecord(memberID, accessTypeID);
+			//baseRepository.getAccessRepository().clearAccessAttemptsRecord(memberID, accessTypeID);
 
 		} else {
 			baseRepository.getAccessRepository().flagAccessAttempts(memberID, accessTypeID);
