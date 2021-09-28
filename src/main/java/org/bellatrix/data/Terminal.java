@@ -14,6 +14,7 @@ public class Terminal {
 	private String postalCode;
 	private String nnsID;
 	private String merchantCategoryCode;
+	private Members member;
 
 	public Integer getId() {
 		return id;
@@ -109,6 +110,14 @@ public class Terminal {
 
 	public void setMerchantCategoryCode(String merchantCategoryCode) {
 		this.merchantCategoryCode = merchantCategoryCode;
+	}
+
+	public Members getMember() {
+		return member;
+	}
+
+	public void setMember(Members member) {
+		this.member = member;
 	}
 
 }

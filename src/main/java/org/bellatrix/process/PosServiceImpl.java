@@ -129,14 +129,22 @@ public class PosServiceImpl implements Pos {
 			tv.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 			tv.setTransferTypeID(terminal.getTransferTypeID());
 
+			MemberView memberTransfer = new MemberView();
+			memberTransfer.setId(terminal.getMember().getId());
+			memberTransfer.setName(terminal.getMember().getName());
+			memberTransfer.setUsername(terminal.getMember().getUsername());
+			
 			MemberView toTransfer = new MemberView();
-			toTransfer.setId(terminal.getToMember().getId());
-			toTransfer.setName(terminal.getToMember().getName());
-			toTransfer.setUsername(terminal.getToMember().getUsername());
+			if (terminal.getToMember() != null) {
+				toTransfer.setId(terminal.getToMember().getId());
+				toTransfer.setName(terminal.getToMember().getName());
+				toTransfer.setUsername(terminal.getToMember().getUsername());
+			}
 
 			List<TerminalView> ltv = new LinkedList<TerminalView>();
 			ltv.add(tv);
 			tir.setTerminal(ltv);
+			tir.setMember(memberTransfer);
 			tir.setToMember(toTransfer);
 			tir.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 			return tir;
@@ -396,11 +404,11 @@ public class PosServiceImpl implements Pos {
 		if (req.getTransferTypeID() == null) {
 			req.setTerminalID(terminal.getTransferTypeID());
 		}
-		
-		if(req.getMerchantCategoryCode() == null) {
+
+		if (req.getMerchantCategoryCode() == null) {
 			req.setMerchantCategoryCode(terminal.getMerchantCategoryCode());
 		}
-		
+
 		baseRepository.getPosRepository().updatePOS(req, terminal.getToMember().getId());
 	}
 

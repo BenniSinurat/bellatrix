@@ -14,6 +14,7 @@ public class TerminalInquiryResponse implements Serializable {
 	 */
 	private static final long serialVersionUID = -8698598506372750976L;
 	private MemberView toMember;
+	private MemberView member;
 	private List<TerminalView> terminal;
 	private ResponseStatus status;
 
@@ -39,6 +40,14 @@ public class TerminalInquiryResponse implements Serializable {
 
 	public void setTerminal(List<TerminalView> terminal) {
 		this.terminal = terminal;
+	}
+
+	public MemberView getMember() {
+		return member;
+	}
+
+	public void setMember(MemberView member) {
+		this.member = member;
 	}
 
 }

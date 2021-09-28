@@ -73,7 +73,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(),
+				toMember.getId());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -96,7 +97,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(),
+				toMember.getId());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -119,7 +121,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(),
+				toMember.getId());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -142,8 +145,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		List<Terminal> terminal = baseRepository.getPosRepository().getPosTerminalDetail(toMember, req.getCurrentPage(),
-				req.getPageSize());
+		List<Terminal> terminal = baseRepository.getPosRepository().getPosTerminalDetail(toMember.getId(),
+				req.getCurrentPage(), req.getPageSize());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -162,20 +165,45 @@ public class PosPaymentValidation {
 		 * Validate ToMember dan Terminal ID
 		 */
 		Terminal terminal = new Terminal();
+		Members member = new Members();
+		Members toMember = new Members();
 		if (req.getNnsID() == null) {
-			Members toMember = memberValidation.validateMember(req.getToMember(), false);
-			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+			member = memberValidation.validateMember(req.getToMember(), false);
+			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), member.getId());
+
+			if (terminal == null) {
+				throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
+			}
+			terminal.setMember(member);
+
+			if (terminal.getToMember() == null) {
+				terminal.setToMember(null);
+			} else {
+				toMember = baseRepository.getMembersRepository().findOneMembers("id", terminal.getToMember().getId());
+				if (toMember == null) {
+					terminal.setToMember(null);
+				} else {
+					terminal.setToMember(toMember);
+				}
+			}
 		} else {
 			terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getNnsID());
 			if (terminal == null) {
 				throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
 			}
-			Members toMember = memberValidation.validateMemberID(terminal.getToMember().getId(), false);
-			terminal.setToMember(toMember);
-		}
-
-		if (terminal == null) {
-			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
+			member = memberValidation.validateMemberID(terminal.getMember().getId(), false);
+			terminal.setMember(member);
+			
+			if (terminal.getToMember() == null) {
+				terminal.setToMember(null);
+			} else {
+				toMember = baseRepository.getMembersRepository().findOneMembers("id", terminal.getToMember().getId());
+				if (toMember == null) {
+					terminal.setToMember(null);
+				} else {
+					terminal.setToMember(toMember);
+				}
+			}
 		}
 
 		return terminal;
@@ -200,7 +228,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(),
+				toMember.getId());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -216,13 +245,13 @@ public class PosPaymentValidation {
 		 * Validate FromAccount
 		 */
 		accountValidation.validateAccount(transferType, fromMember, true);
-		//if (transferType.getFromAccounts() != transferType.getToAccounts()) {
+		// if (transferType.getFromAccounts() != transferType.getToAccounts()) {
 
-			/*
-			 * Validate ToAccount
-			 */
-			accountValidation.validateAccount(transferType, toMember, false);
-		//}
+		/*
+		 * Validate ToAccount
+		 */
+		accountValidation.validateAccount(transferType, toMember, false);
+		// }
 
 		return terminal;
 	}
@@ -236,7 +265,8 @@ public class PosPaymentValidation {
 		/*
 		 * Validate Terminal ID
 		 */
-		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(), toMember);
+		Terminal terminal = baseRepository.getPosRepository().getPosTerminalDetail(req.getTerminalID(),
+				toMember.getId());
 
 		if (terminal == null) {
 			throw new TransactionException(String.valueOf(Status.TERMINAL_NOT_FOUND));
@@ -327,15 +357,15 @@ public class PosPaymentValidation {
 			 */
 			fromAccount = accountValidation.validateAccount(transferType, fromMember, true);
 
-			//if (transferType.getFromAccounts() != transferType.getToAccounts()) {
+			// if (transferType.getFromAccounts() != transferType.getToAccounts()) {
 
-				/*
-				 * Validate ToAccount
-				 */
-				toAccount = accountValidation.validateAccount(transferType, targetMember, false);
-			//} else {
-			//	toAccount = fromAccount;
-			//}
+			/*
+			 * Validate ToAccount
+			 */
+			toAccount = accountValidation.validateAccount(transferType, targetMember, false);
+			// } else {
+			// toAccount = fromAccount;
+			// }
 
 			/*
 			 * Lock Member
