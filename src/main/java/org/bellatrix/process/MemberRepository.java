@@ -55,7 +55,7 @@ public class MemberRepository {
 
 	public List<Members> findMembers(String byField, Object id) {
 		try {
-			List<Members> members = this.jdbcTemplate.query("select *  from members where " + byField + " = ?",
+			List<Members> members = this.jdbcTemplate.query("select * from members where " + byField + " = ?",
 					new Object[] { id }, new RowMapper<Members>() {
 						public Members mapRow(ResultSet rs, int rowNum) throws SQLException {
 							Members members = new Members();

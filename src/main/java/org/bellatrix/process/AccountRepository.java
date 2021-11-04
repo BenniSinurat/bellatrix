@@ -6,6 +6,7 @@ import java.sql.SQLException;
 import java.util.List;
 import javax.sql.DataSource;
 
+import org.apache.log4j.Logger;
 import org.bellatrix.data.AccountPermissions;
 import org.bellatrix.data.Accounts;
 import org.bellatrix.data.Currencies;
@@ -22,16 +23,17 @@ import org.springframework.stereotype.Repository;
 @Component
 @Repository
 public class AccountRepository {
-
+	Logger logger = Logger.getLogger(AccessRepository.class);
 	private JdbcTemplate jdbcTemplate;
 
 	public void createAccount(String name, String description, boolean system, Integer currencyID) {
-		jdbcTemplate.update("insert into accounts (name, description, system_account, currency_id) values (?, ?, ?, ?)", name,
-				description, system, currencyID);
+		jdbcTemplate.update("insert into accounts (name, description, system_account, currency_id) values (?, ?, ?, ?)",
+				name, description, system, currencyID);
 	}
 
-	public void updateAccount(Integer id,Integer currencyID, String name, String description, boolean system) {
-		this.jdbcTemplate.update("update  accounts set name = ?, description = ?, system_account = ?, currency_id = ? where id = ?",
+	public void updateAccount(Integer id, Integer currencyID, String name, String description, boolean system) {
+		this.jdbcTemplate.update(
+				"update  accounts set name = ?, description = ?, system_account = ?, currency_id = ? where id = ?",
 				new Object[] { name, description, system, currencyID, id });
 	}
 
@@ -54,13 +56,14 @@ public class AccountRepository {
 	}
 
 	public void deleteAccountPermission(Integer id, Integer groupID) {
-		this.jdbcTemplate.update("delete from account_permissions where account_id = ? and group_id = ?", new Object[] { id, groupID });
+		this.jdbcTemplate.update("delete from account_permissions where account_id = ? and group_id = ?",
+				new Object[] { id, groupID });
 	}
 
 	public List<Accounts> loadAllAccounts(Integer currentPage, Integer pageSize) {
 		try {
-			List<Accounts> accounts = this.jdbcTemplate.query("select * from accounts LIMIT ?, ?", new Object[] { currentPage, pageSize },
-					new RowMapper<Accounts>() {
+			List<Accounts> accounts = this.jdbcTemplate.query("select * from accounts LIMIT ?, ?",
+					new Object[] { currentPage, pageSize }, new RowMapper<Accounts>() {
 						public Accounts mapRow(ResultSet rs, int rowNum) throws SQLException {
 							Accounts accounts = new Accounts();
 							accounts.setId(rs.getInt("id"));
@@ -108,7 +111,7 @@ public class AccountRepository {
 			return null;
 		}
 	}
-	
+
 	public List<AccountPermissions> loadGroupPermissionByAccounts(Integer accountID) {
 		try {
 			List<AccountPermissions> accounts = this.jdbcTemplate.query(
@@ -217,7 +220,7 @@ public class AccountRepository {
 			return null;
 		}
 	}
-	
+
 	public Accounts loadAccountByID(Integer accountID) {
 		try {
 			Accounts accounts = this.jdbcTemplate.queryForObject(
@@ -320,9 +323,14 @@ public class AccountRepository {
 
 	public BigDecimal loadUpperCreditLimitBalance(String username, Integer accountID) {
 		try {
-			/**BigDecimal balance = jdbcTemplate.queryForObject(
-					"select sum(amount) as journal from transfers join members on members.id = transfers.to_member_id where members.username = ? and transfers.to_account_id = ? and transfers.charged_back = false and YEAR(transaction_date) = YEAR(NOW()) AND MONTH(transaction_date)=MONTH(NOW());",
-					new Object[] { username, accountID }, BigDecimal.class);*/
+			/**
+			 * BigDecimal balance = jdbcTemplate.queryForObject( "select sum(amount) as
+			 * journal from transfers join members on members.id = transfers.to_member_id
+			 * where members.username = ? and transfers.to_account_id = ? and
+			 * transfers.charged_back = false and YEAR(transaction_date) = YEAR(NOW()) AND
+			 * MONTH(transaction_date)=MONTH(NOW());", new Object[] { username, accountID },
+			 * BigDecimal.class);
+			 */
 			BigDecimal balance = jdbcTemplate.queryForObject(
 					"select sum(amount) as journal from transfers join members on members.id = transfers.from_member_id where members.username = ? and transfers.from_account_id = ? and transfers.charged_back = false and YEAR(transaction_date) = YEAR(NOW()) AND MONTH(transaction_date)=MONTH(NOW());",
 					new Object[] { username, accountID }, BigDecimal.class);
@@ -383,10 +391,73 @@ public class AccountRepository {
 		}
 	}
 
+	public List<Transfers> loadTransferFromUsername(String username, Integer accountID, Integer currentPage,
+			Integer pageSize, String fromDate, String toDate, String orderBy, String orderType, String byField,
+			Object valueField) {
+		try {
+			List<Transfers> transfer = this.jdbcTemplate.query(
+					"select -a.amount as amount, a.id, a.transfer_type_id, t.name, a.from_account_id, a.to_account_id, a.from_member_id, a.to_member_id, b.username as from_username, (select username from members where id=a.to_member_id) as to_username, b.name as from_name, (select name from members where id=a.to_member_id) as to_name, a.trace_number, a.transaction_number, a.description, a.transaction_state, a.transaction_date, a.modified_date, a.parent_id, a.charged_back, a.custom_field, a.reverse_by, (select username from members where id=a.reverse_by) as reverse_username, (select name from members where id=a.reverse_by) as reverse_name, a.reference_number, a.remark from transfers a join members b on a.from_member_id = b.id join transfer_types t on a.transfer_type_id = t.id where b.username=? and a.from_account_id=? and a.transaction_date between ? and ? and a."
+							+ byField
+							+ "= ? union all select c.amount, c.id, c.transfer_type_id, r.name, c.from_account_id, c.to_account_id, c.from_member_id, c.to_member_id, (select username from members where id=c.from_member_id) as from_username, b.username as to_username, (select name from members where id=c.from_member_id) as from_name, b.name as to_name, c.trace_number, c.transaction_number, c.description, c.transaction_state, c.transaction_date, c.modified_date, c.parent_id, c.charged_back, c.custom_field, c.reverse_by, (select username from members where id=c.reverse_by) as reverse_username, (select name from members where id=c.reverse_by) as reverse_name, c.reference_number, c.remark from transfers c join members b on c.to_member_id = b.id join transfer_types r on c.transfer_type_id=r.id where b.username=? and c.to_account_id=? and c.transaction_date between ? and ? and c."
+							+ byField + "=? order by " + orderBy + " " + orderType + " limit ?,?",
+					new Object[] { username, accountID, fromDate, toDate, valueField, username, accountID, fromDate,
+							toDate, valueField, currentPage, pageSize },
+					new RowMapper<Transfers>() {
+						public Transfers mapRow(ResultSet rs, int rowNum) throws SQLException {
+							Transfers transfer = new Transfers();
+							transfer.setId(rs.getInt("id"));
+							transfer.setTransferTypeID(rs.getInt("transfer_type_id"));
+							transfer.setFromAccountID(rs.getInt("from_account_id"));
+							transfer.setToAccountID(rs.getInt("to_account_id"));
+							transfer.setName(rs.getString("name"));
+							transfer.setFromMemberID(rs.getInt("from_member_id"));
+							transfer.setToMemberID(rs.getInt("to_member_id"));
+							transfer.setFromUsername(rs.getString("from_username"));
+							transfer.setToUsername(rs.getString("to_username"));
+							transfer.setFromName(rs.getString("from_name"));
+							transfer.setToName(rs.getString("to_name"));
+							transfer.setAmount(rs.getBigDecimal("amount"));
+							transfer.setTraceNumber(rs.getString("trace_number"));
+							transfer.setTransactionNumber(rs.getString("transaction_number"));
+							transfer.setParentID(rs.getString("parent_id"));
+							transfer.setTransactionDate(rs.getTimestamp("transaction_date"));
+							transfer.setFormattedTransactionDate(Utils.formatDate(rs.getTimestamp("transaction_date")));
+							transfer.setDescription(rs.getString("description"));
+							transfer.setChargedBack(rs.getBoolean("charged_back"));
+							transfer.setModifiedDate(rs.getTimestamp("modified_date"));
+							transfer.setTransactionState(rs.getString("transaction_state"));
+							transfer.setReverseByID(rs.getInt("reverse_by"));
+							transfer.setReverseByName(rs.getString("reverse_name"));
+							transfer.setReverseByUsername(rs.getString("reverse_username"));
+							transfer.setCustomField(rs.getBoolean("custom_field"));
+							transfer.setReferenceNumber(rs.getString("reference_number"));
+							transfer.setRemark(rs.getString("remark"));
+							return transfer;
+						}
+					});
+
+			return transfer;
+		} catch (EmptyResultDataAccessException e) {
+			return null;
+		}
+	}
+
 	public Integer countTotalTransaction(Integer memberID, Integer accountID, String startDate, String endDate) {
 		int count = this.jdbcTemplate.queryForObject(
 				"select sum(total) from (select  count(*) as total from transfers where transfers.from_member_id = ? and transfers.from_account_id = ? and transfers.transaction_date between ? and ? union all select  count(*) as total from transfers where transfers.to_member_id = ? and transfers.to_account_id = ? and transfers.transaction_date between ? and ?) as sub;",
 				Integer.class, memberID, accountID, startDate, endDate, memberID, accountID, startDate, endDate);
+		return count;
+	}
+
+	public Integer countTotalTransaction(Integer memberID, Integer accountID, String startDate, String endDate,
+			String byField, Object valueField) {
+		int count = this.jdbcTemplate.queryForObject(
+				"select sum(total) from (select  count(*) as total from transfers where transfers.from_member_id = ? and transfers.from_account_id = ? and transfers.transaction_date between ? and ? and transfers."
+						+ byField
+						+ " = ? union all select  count(*) as total from transfers where transfers.to_member_id = ? and transfers.to_account_id = ? and transfers.transaction_date between ? and ? and transfers."
+						+ byField + " = ?) as sub;",
+				Integer.class, memberID, accountID, startDate, endDate, valueField, memberID, accountID, startDate,
+				endDate, valueField);
 		return count;
 	}
 

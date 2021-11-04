@@ -13,6 +13,9 @@ public class TransactionHistoryRequest {
 	private String credential;
 	private Integer accessTypeID;
 
+	private Integer transferTypeID;
+	private String transactionStatus;
+
 	public String getUsername() {
 		return username;
 	}
@@ -91,6 +94,22 @@ public class TransactionHistoryRequest {
 
 	public void setDescendingOrder(Boolean descendingOrder) {
 		this.descendingOrder = descendingOrder;
+	}
+
+	public Integer getTransferTypeID() {
+		return transferTypeID;
+	}
+
+	public void setTransferTypeID(Integer transferTypeID) {
+		this.transferTypeID = transferTypeID;
+	}
+
+	public String getTransactionStatus() {
+		return transactionStatus;
+	}
+
+	public void setTransactionStatus(String transactionStatus) {
+		this.transactionStatus = transactionStatus;
 	}
 
 }

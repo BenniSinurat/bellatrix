@@ -36,6 +36,7 @@
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadMembersResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/VADeleteRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/ChildMenu.java
+/Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadPaymentChannelByIDResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/BankAccountTransferConfirmationResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/ConfirmKYCResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadMembersByIDRequest.java
@@ -76,6 +77,7 @@
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/CreateCredentialRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/process/PosRepository.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/UpdateScheduleTransfer.java
+/Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/LoadPaymentChannelByIDRequest.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/services/GeneratePaymentTicketResponse.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/process/Configurator.java
 /Users/bennisinurat/git/bellatrix-dev/src/main/java/org/bellatrix/data/AccountTransferRequest.java

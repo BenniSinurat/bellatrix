@@ -175,6 +175,9 @@ public class BillPaymentRepository {
 							channel.setId(rs.getInt("id"));
 							channel.setName(rs.getString("name"));
 							channel.setDescription(rs.getString("description"));
+							channel.setLink(rs.getString("link"));
+							channel.setIcon(rs.getString("icon"));
+							
 							return channel;
 						}
 					});
@@ -245,6 +248,8 @@ public class BillPaymentRepository {
 							p.setName(rs.getString("name"));
 							p.setDescription(rs.getString("description"));
 							p.setTransferTypeID(rs.getInt("transfer_type_id"));
+							p.setLink(rs.getString("link"));
+							p.setIcon(rs.getString("icon"));
 							return p;
 						}
 					});
@@ -253,7 +258,7 @@ public class BillPaymentRepository {
 			return null;
 		}
 	}
-	
+
 	public List<PaymentChannelPermissions> listPermissionByPaymentChannel(Integer id, String binPrefix) {
 		try {
 			List<PaymentChannelPermissions> channel = this.jdbcTemplate.query(

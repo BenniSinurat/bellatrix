@@ -6,6 +6,8 @@ public class PaymentChannel {
 	private String name;
 	private String description;
 	private Integer transferTypeID;
+	private String link;
+	private String icon;
 
 	public Integer getId() {
 		return id;
@@ -37,6 +39,22 @@ public class PaymentChannel {
 
 	public void setTransferTypeID(Integer transferTypeID) {
 		this.transferTypeID = transferTypeID;
+	}
+
+	public String getLink() {
+		return link;
+	}
+
+	public void setLink(String link) {
+		this.link = link;
+	}
+
+	public String getIcon() {
+		return icon;
+	}
+
+	public void setIcon(String icon) {
+		this.icon = icon;
 	}
 
 }

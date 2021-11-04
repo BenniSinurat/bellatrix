@@ -140,7 +140,7 @@ public class AccountServiceImpl implements Account {
 			Currencies currency = baseRepository.getCurrenciesRepository()
 					.loadCurrencyByID(account.getCurrency().getId());
 			account.setCurrency(currency);
-			
+
 			BigDecimal balance = accountValidation.loadBalanceInquiry(req.getUsername(), req.getAccountID());
 			BigDecimal reservedAmount = accountValidation.loadReservedAmount(req.getUsername(), req.getAccountID());
 
@@ -183,19 +183,39 @@ public class AccountServiceImpl implements Account {
 			String orderBy = req.getOrderBy() != null ? req.getOrderBy() : "id";
 			String descendingOrder = req.getDescendingOrder() == null || req.getDescendingOrder() == true ? "desc"
 					: "asc";
-			List<Transfers> trf = baseRepository.getAccountRepository().loadTransferFromUsername(req.getUsername(),
-					req.getAccountID(), req.getCurrentPage(), req.getPageSize(), fromDate, toDate, orderBy,
-					descendingOrder);
+			List<Transfers> trf = new LinkedList<>();
+
+			if (req.getTransferTypeID() != null) {
+				trf = baseRepository.getAccountRepository().loadTransferFromUsername(req.getUsername(),
+						req.getAccountID(), req.getCurrentPage(), req.getPageSize(), fromDate, toDate, orderBy,
+						descendingOrder, "transfer_type_id",req.getTransferTypeID());
+			} else if (req.getTransactionStatus() != null) {
+				trf = baseRepository.getAccountRepository().loadTransferFromUsername(req.getUsername(),
+						req.getAccountID(), req.getCurrentPage(), req.getPageSize(), fromDate, toDate, orderBy,
+						descendingOrder, "transaction_state", req.getTransactionStatus());
+			} else {
+				trf = baseRepository.getAccountRepository().loadTransferFromUsername(req.getUsername(),
+						req.getAccountID(), req.getCurrentPage(), req.getPageSize(), fromDate, toDate, orderBy,
+						descendingOrder);
+			}
 
 			if (trf.size() == 0) {
 				history.setStatus(StatusBuilder.getStatus(Status.NO_TRANSACTION));
 				return history;
 			}
-			
-			Currencies currency = baseRepository.getCurrenciesRepository().loadCurrencyByAccountID(req.getAccountID());
 
-			Integer totalDisplayRecords = baseRepository.getAccountRepository()
-					.countTotalTransaction(fromMember.getId(), req.getAccountID(), fromDate, toDate);
+			Currencies currency = baseRepository.getCurrenciesRepository().loadCurrencyByAccountID(req.getAccountID());
+			Integer totalDisplayRecords = 0;
+			if (req.getTransferTypeID() != null) {
+				totalDisplayRecords = baseRepository.getAccountRepository().countTotalTransaction(fromMember.getId(),
+						req.getAccountID(), fromDate, toDate, "transfer_type_id", req.getTransferTypeID());
+			} else if (req.getTransactionStatus() != null) {
+				totalDisplayRecords = baseRepository.getAccountRepository().countTotalTransaction(fromMember.getId(),
+						req.getAccountID(), fromDate, toDate, "transaction_state", req.getTransactionStatus());
+			} else {
+				totalDisplayRecords = baseRepository.getAccountRepository().countTotalTransaction(fromMember.getId(),
+						req.getAccountID(), fromDate, toDate);
+			}
 			Integer totalRecords = baseRepository.getAccountRepository().countTotalRecords();
 
 			List<Integer> transferIDs = new LinkedList<Integer>();
@@ -225,20 +245,20 @@ public class AccountServiceImpl implements Account {
 				toMemberTrf.setId(trf.get(i).getToMemberID());
 				toMemberTrf.setName(trf.get(i).getToName());
 				toMemberTrf.setUsername(trf.get(i).getToUsername());
-				
+
 				MemberView reverseByTrf = new MemberView();
 				reverseByTrf.setId(trf.get(i).getReverseByID());
 				reverseByTrf.setName(trf.get(i).getReverseByName());
 				reverseByTrf.setUsername(trf.get(i).getReverseByUsername());
 
-				//if (trf.get(i).getParentID() == null) {
-					TransferTypeFields typeField = new TransferTypeFields();
-					typeField.setId(trf.get(i).getTransferTypeID());
-					typeField.setFromAccounts(trf.get(i).getFromAccountID());
-					typeField.setToAccounts(trf.get(i).getToAccountID());
-					typeField.setName(trf.get(i).getName());
-					trfHistory.setTransferType(typeField);
-				//}
+				// if (trf.get(i).getParentID() == null) {
+				TransferTypeFields typeField = new TransferTypeFields();
+				typeField.setId(trf.get(i).getTransferTypeID());
+				typeField.setFromAccounts(trf.get(i).getFromAccountID());
+				typeField.setToAccounts(trf.get(i).getToAccountID());
+				typeField.setName(trf.get(i).getName());
+				trfHistory.setTransferType(typeField);
+				// }
 
 				trfHistory.setAmount(trf.get(i).getAmount());
 				trfHistory.setFormattedAmount(Utils.formatAmount(trf.get(i).getAmount(), currency.getGrouping(),
@@ -337,8 +357,8 @@ public class AccountServiceImpl implements Account {
 		try {
 			webserviceValidation.validateWebservice(headerParam.value.getToken());
 			accountValidation.validateAccount(req.getId());
-			baseRepository.getAccountRepository().updateAccount(req.getId(), req.getCurrencyID(), req.getName(), req.getDescription(),
-					req.isSystemAccount());
+			baseRepository.getAccountRepository().updateAccount(req.getId(), req.getCurrencyID(), req.getName(),
+					req.getDescription(), req.isSystemAccount());
 		} catch (TransactionException e) {
 			throw new TransactionException(e.getMessage());
 		}
@@ -384,7 +404,7 @@ public class AccountServiceImpl implements Account {
 			throw new TransactionException(e.getMessage());
 		}
 	}
-	
+
 	@Override
 	public CurrencyResponse loadCurrency(Holder<Header> headerParam, CurrencyRequest req) throws TransactionException {
 		CurrencyResponse cr = new CurrencyResponse();
@@ -421,7 +441,7 @@ public class AccountServiceImpl implements Account {
 		webserviceValidation.validateWebservice(headerParam.value.getToken());
 		currenciesValidation.updateCurrency(req);
 	}
-	
+
 	@Override
 	public LoadAccountPermissionsResponse loadAccountPermissionsByAccount(Holder<Header> headerParam,
 			LoadAccountPermissionsRequest req) {
@@ -441,7 +461,7 @@ public class AccountServiceImpl implements Account {
 			return loadAccountPermissionsResponse;
 		}
 	}
-	
+
 	@Override
 	public LoadAccountPermissionsResponse loadAccountPermissionsByID(Holder<Header> headerParam,
 			LoadAccountPermissionsRequest req) {

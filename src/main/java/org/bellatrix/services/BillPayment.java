@@ -13,9 +13,11 @@ import org.bellatrix.data.Header;
 
 public interface BillPayment {
 
-	/**@WebMethod(action = "loadBillerList")
-	public BillerListResponse loadBillerList(@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam)
-			throws Exception;**/
+	/**
+	 * @WebMethod(action = "loadBillerList") public BillerListResponse
+	 *                   loadBillerList(@WebParam(header = true, name =
+	 *                   "headerAuth") Holder<Header> headerParam) throws Exception;
+	 **/
 
 	@WebMethod(action = "loadBillersFromUsername")
 	public BillerListResponse loadBillersFromUsername(
@@ -75,4 +77,8 @@ public interface BillPayment {
 	public LoadPaymentChannelByMemberIDResponse loadPaymentChannelByMemberID(
 			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
 			@WebParam LoadPaymentChannelByMemberIDRequest req);
+
+	LoadPaymentChannelByIDResponse loadPaymentChannelByID(
+			@WebParam(header = true, name = "headerAuth") Holder<Header> headerParam,
+			@WebParam LoadPaymentChannelByIDRequest req);
 }

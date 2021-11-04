@@ -70,6 +70,7 @@ org/bellatrix/services/TerminalInquiryResponse.class
 org/bellatrix/services/LoadTransferTypesByGroupIDResponse.class
 org/bellatrix/services/LoadCustomFieldsByGroupIDRequest.class
 org/bellatrix/services/BillInquiryResponse.class
+org/bellatrix/services/LoadPaymentChannelByIDResponse.class
 org/bellatrix/process/TransferTypeValidation.class
 org/bellatrix/data/BankTransfers.class
 org/bellatrix/data/Header.class
@@ -356,6 +357,7 @@ org/bellatrix/data/WebServicePermission.class
 org/bellatrix/process/TransferTypeRepository$1.class
 org/bellatrix/services/Member.class
 org/bellatrix/services/VAPaymentResponse.class
+org/bellatrix/process/AccountRepository$11.class
 org/bellatrix/process/BillPaymentValidation.class
 org/bellatrix/process/MenuServiceImpl.class
 org/bellatrix/process/VirtualAccountRepository$14.class
@@ -428,6 +430,7 @@ org/bellatrix/services/ConfirmPaymentRequest.class
 org/bellatrix/services/BillerRegisterRequest.class
 org/bellatrix/data/Status.class
 org/bellatrix/process/AccountValidation.class
+org/bellatrix/services/LoadPaymentChannelByIDRequest.class
 org/bellatrix/services/LoadAccountPermissionsResponse.class
 org/bellatrix/services/LoadPaymentChannelByMemberIDResponse.class
 org/bellatrix/process/TransferRepository$2.class

@@ -10,8 +10,6 @@ public class LoadPaymentChannelByMemberIDResponse {
 	private List<PaymentChannel> paymentChannel;
 	private ResponseStatus status;
 
-	
-
 	public ResponseStatus getStatus() {
 		return status;
 	}

@@ -20,6 +20,8 @@ import org.bellatrix.services.BillPaymentResponse;
 import org.bellatrix.services.BillerDetailsRequest;
 import org.bellatrix.services.BillerListResponse;
 import org.bellatrix.services.BillerRegisterRequest;
+import org.bellatrix.services.LoadPaymentChannelByIDRequest;
+import org.bellatrix.services.LoadPaymentChannelByIDResponse;
 import org.bellatrix.services.LoadPaymentChannelByMemberIDRequest;
 import org.bellatrix.services.LoadPaymentChannelByMemberIDResponse;
 import org.bellatrix.services.LoadPermissionByPaymentChannelRequest;
@@ -216,6 +218,23 @@ public class BillPaymentServiceImpl implements BillPayment {
 			memberValidation.validateMemberID(req.getMemberID(), true);
 			
 			List<PaymentChannel> channel = baseRepository.getBillPaymentRepository().listPaymentChannelByMemberID(req.getMemberID());
+			res.setPaymentChannel(channel);
+			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
+		} catch (Exception e) {
+			res.setStatus(StatusBuilder.getStatus(e.getMessage()));
+			return res;
+		}
+		return res;
+	}
+	
+	@Override
+	public LoadPaymentChannelByIDResponse loadPaymentChannelByID(Holder<Header> headerParam,
+			LoadPaymentChannelByIDRequest req) {
+		LoadPaymentChannelByIDResponse res = new LoadPaymentChannelByIDResponse();
+		try {
+			webserviceValidation.validateWebservice(headerParam.value.getToken());
+			
+			PaymentChannel channel = baseRepository.getBillPaymentRepository().findPaymentChannelByID(req.getChannelID());
 			res.setPaymentChannel(channel);
 			res.setStatus(StatusBuilder.getStatus(Status.PROCESSED));
 		} catch (Exception e) {
